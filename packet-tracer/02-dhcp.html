@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Packet Tracer 2 – DHCP</title>
+<link rel="stylesheet" href="pt-style.css">
+</head>
+<body>
+
+<div class="cover">
+  <h1>Packet Tracer Uygulaması 2</h1>
+  <div class="sub"><b>DHCP ile Otomatik IP Dağıtımı</b> · Router'ı DHCP sunucusu yapma, PC'lerin IP'yi kendiliğinden alması</div>
+  <div class="meta">
+    <div>Ad Soyad: </div><div>Sınıf / No: </div>
+    <div>Tarih: </div><div>Süre: 2 ders saati (80 dk)</div>
+  </div>
+</div>
+
+<h2>1. Amaç ve Kazanımlar</h2>
+<p>Önceki uygulamalarda her PC'ye IP adresini tek tek elle yazdın. 30 bilgisayarlık bir laboratuvarda bu hem uzun sürer hem de hataya açıktır.
+<b>DHCP</b> (Dynamic Host Configuration Protocol), ağa bağlanan cihazlara <b>IP adresi, alt ağ maskesi, varsayılan ağ geçidi ve DNS sunucusu</b> bilgilerini otomatik olarak dağıtan hizmettir.
+Bu uygulamada router'ı DHCP sunucusu yapacak, PC'lerin adreslerini otomatik almasını sağlayacak ve bu sürecin paketlerini simülasyonda izleyeceksin.</p>
+<ul>
+  <li>Router üzerinde DHCP havuzu (<code>ip dhcp pool</code>) oluşturur.</li>
+  <li>Dağıtılmaması gereken adresleri <code>ip dhcp excluded-address</code> ile ayırır.</li>
+  <li>PC'leri DHCP istemcisi yapar ve aldıkları bilgileri <code>ipconfig /all</code> ile doğrular.</li>
+  <li>Router'da <code>show ip dhcp binding</code> ile hangi PC'ye hangi adresin verildiğini görür.</li>
+  <li>DHCP'nin dört adımını (Discover – Offer – Request – Ack) simülasyonda izler.</li>
+</ul>
+
+<h2>2. Topoloji</h2>
+<figure id="fig-plan"></figure>
+<figcaption>Topoloji – Tüm kablolar Copper Straight-Through</figcaption>
+
+<h3>Adresleme Planı</h3>
+<table>
+  <tr><th>Cihaz / Aralık</th><th>Adres</th><th>Açıklama</th></tr>
+  <tr><td>Ağ</td><td>192.168.20.0 / 24</td><td>Maske 255.255.255.0</td></tr>
+  <tr><td>R1 – GigabitEthernet0/0</td><td>192.168.20.1</td><td>Elle (statik) verilir; PC'lerin ağ geçidi</td></tr>
+  <tr><td>Ayrılmış adresler</td><td>192.168.20.1 – 192.168.20.10</td><td>DHCP dağıtmaz (router, sunucu, yazıcı gibi sabit cihazlar için)</td></tr>
+  <tr><td>DHCP havuzu</td><td>192.168.20.11 – 192.168.20.254</td><td>PC'lere otomatik dağıtılır</td></tr>
+  <tr><td>DNS sunucusu</td><td>8.8.8.8</td><td>PC'lere bildirilecek DNS adresi</td></tr>
+  <tr><td>PC1, PC2, PC3</td><td>DHCP</td><td>Adreslerini router'dan otomatik alır</td></tr>
+</table>
+
+<!-- ======================= UYGULAMA ======================= -->
+<h2 class="pb">3. Uygulama – Adım Adım</h2>
+<div class="box warn"><b>Okuma rehberi:</b> Şekillerdeki <b style="color:#e11d48">kırmızı yuvarlaklar</b> tıklayacağın veya yazacağın yeri,
+içindeki <b style="color:#e11d48">numaralar</b> sırayı gösterir. Metindeki <span class="c">1</span> işaretleri şekildeki numaralarla aynıdır.</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">1</span>Topolojiyi kur</div>
+  <ol class="clicks">
+    <li><b>Network Devices › Routers</b> içinden <b>2911</b> ekle, adını <b>R1</b> yap.</li>
+    <li><b>Network Devices › Switches</b> içinden <b>2960</b> ekle, adını <b>SW1</b> yap.</li>
+    <li><b>End Devices</b> içinden üç <b>PC</b> ekle, adlarını <b>PC1</b>, <b>PC2</b>, <b>PC3</b> yap.</li>
+    <li><b>Connections › Copper Straight-Through</b> ile bağla:</li>
+  </ol>
+  <table>
+    <tr><th>Bir uç</th><th>Diğer uç</th></tr>
+    <tr><td>R1 – GigabitEthernet0/0</td><td>SW1 – GigabitEthernet0/1</td></tr>
+    <tr><td>SW1 – FastEthernet0/1</td><td>PC1 – FastEthernet0</td></tr>
+    <tr><td>SW1 – FastEthernet0/2</td><td>PC2 – FastEthernet0</td></tr>
+    <tr><td>SW1 – FastEthernet0/3</td><td>PC3 – FastEthernet0</td></tr>
+  </table>
+  <figure id="fig-topo"></figure>
+  <figcaption>Şekil 1 – Kablolama bittiğinde (router portu henüz kapalı, bu yüzden kırmızı)</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">2</span>R1'in portuna IP ver</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> <b>R1</b>'e tıkla, <b>CLI</b> sekmesine geç. <i>"initial configuration dialog"</i> sorusuna <code>no</code> yaz, <b>Enter</b>'a bas.</li>
+    <li><span class="c">2</span> Aşağıdaki komutlarla portu yapılandır ve <span class="c">3</span> <code>no shutdown</code> ile aç.</li>
+  </ol>
+<pre>Router&gt; enable
+Router# configure terminal
+Router(config)# hostname R1
+R1(config)# interface gigabitEthernet 0/0
+R1(config-if)# ip address 192.168.20.1 255.255.255.0
+R1(config-if)# no shutdown
+R1(config-if)# exit</pre>
+  <figure id="fig-r1a"></figure>
+  <figcaption>Şekil 2 – R1 › CLI: port yapılandırması</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">3</span>R1'de DHCP havuzunu oluştur</div>
+  <p>Aynı CLI penceresinde devam et:</p>
+<pre>R1(config)# ip dhcp excluded-address 192.168.20.1 192.168.20.10
+R1(config)# ip dhcp pool LAB
+R1(dhcp-config)# network 192.168.20.0 255.255.255.0
+R1(dhcp-config)# default-router 192.168.20.1
+R1(dhcp-config)# dns-server 8.8.8.8
+R1(dhcp-config)# exit
+R1(config)# end
+R1# copy running-config startup-config</pre>
+  <table>
+    <tr><th>Komut</th><th>Ne işe yarar?</th></tr>
+    <tr><td><code>ip dhcp excluded-address 192.168.20.1 192.168.20.10</code></td><td>Bu aralıktaki adresleri <b>dağıtma</b>. Router'ın kendi adresi (.1) ve ileride eklenecek sabit cihazlar için ayrılır.</td></tr>
+    <tr><td><code>ip dhcp pool LAB</code></td><td><b>LAB</b> adında bir adres havuzu oluşturur ve havuz ayar moduna geçer (<code>dhcp-config</code>).</td></tr>
+    <tr><td><code>network 192.168.20.0 255.255.255.0</code></td><td>Hangi ağdan adres dağıtılacağını belirtir.</td></tr>
+    <tr><td><code>default-router 192.168.20.1</code></td><td>PC'lere bildirilecek <b>varsayılan ağ geçidi</b>.</td></tr>
+    <tr><td><code>dns-server 8.8.8.8</code></td><td>PC'lere bildirilecek <b>DNS sunucusu</b>.</td></tr>
+  </table>
+  <div class="box warn"><b>Dikkat:</b> <code>excluded-address</code> komutu havuz modunun <b>dışında</b>, yani <code>R1(config)#</code> isteminde yazılır. <code>R1(dhcp-config)#</code> içinde yazarsan hata alırsın.</div>
+  <figure id="fig-r1b"></figure>
+  <figcaption>Şekil 3 – R1 › CLI: DHCP havuzu</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">4</span>PC1'i DHCP istemcisi yap</div>
+  <ol class="clicks">
+    <li><b>PC1</b>'e tıkla → <b>Desktop</b> → <b>IP Configuration</b>.</li>
+    <li><span class="c">1</span> <b>DHCP</b> seçeneğini işaretle.</li>
+    <li><span class="c">2</span> Birkaç saniye içinde <b>"DHCP request successful."</b> yazısı çıkmalı.</li>
+    <li><span class="c">3</span> Kutular kendiliğinden dolar: IP <b>192.168.20.11</b>, maske, ağ geçidi <b>192.168.20.1</b> ve DNS <b>8.8.8.8</b>. Kutular gri olur; elle değiştirilemez.</li>
+  </ol>
+  <figure id="fig-pc1"></figure>
+  <figcaption>Şekil 4 – PC1 › Desktop › IP Configuration › DHCP</figcaption>
+  <div class="box tip">Aynı işlemi <b>PC2</b> ve <b>PC3</b> için yap. Sırasıyla <b>192.168.20.12</b> ve <b>192.168.20.13</b> almaları beklenir. Adres, PC'lerin DHCP'ye geçirilme sırasına göre değişebilir; bu normaldir.</div>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">5</span>PC'de alınan bilgileri doğrula</div>
+  <ol class="clicks">
+    <li><b>PC1 › Desktop › Command Prompt</b>'u aç.</li>
+    <li><span class="c">1</span> <code>ipconfig /all</code> yaz.</li>
+    <li><span class="c">2</span> IPv4 adresi ve maskesini, <span class="c">3</span> varsayılan ağ geçidini, <span class="c">4</span> adresi veren DHCP sunucusunu ve <span class="c">5</span> DNS sunucusunu kontrol et.</li>
+  </ol>
+  <figure id="fig-ipall"></figure>
+  <figcaption>Şekil 5 – PC1: ipconfig /all çıktısı</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">6</span>Router'da dağıtılan adresleri gör</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> R1'in CLI sekmesinde <code>show ip dhcp binding</code> yaz.</li>
+    <li><span class="c">2</span> Her satır bir PC'dir: hangi IP'nin hangi MAC adresine verildiği görünür.</li>
+    <li><span class="c">3</span> <code>show ip dhcp pool</code> ile havuzun durumunu (toplam ve kullanılan adres sayısı) gör.</li>
+  </ol>
+  <figure id="fig-bind"></figure>
+  <figcaption>Şekil 6 – R1: show ip dhcp binding ve show ip dhcp pool</figcaption>
+  <div class="box tip"><b>MAC adresi:</b> Her ağ kartının fabrikada verilmiş benzersiz adresidir. Senin ekranındaki MAC adresleri şekildekinden farklı olacaktır. Bir PC'nin MAC adresini <code>ipconfig /all</code> çıktısındaki <b>Physical Address</b> satırında görebilirsin.</div>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">7</span>Bağlantıyı test et</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> PC1'in Command Prompt'unda ağ geçidine ping at: <code>ping 192.168.20.1</code></li>
+    <li><span class="c">2</span> PC3'e ping at: <code>ping 192.168.20.13</code> (PC3'ün aldığı adres farklıysa onu yaz).</li>
+  </ol>
+  <figure id="fig-ping"></figure>
+  <figcaption>Şekil 7 – PC1'den ping testleri</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">8</span>Adresi bırak ve yeniden al</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> <code>ipconfig /release</code> yaz: PC adresini DHCP sunucusuna geri verir, tüm değerler <b>0.0.0.0</b> olur.</li>
+    <li><span class="c">2</span> <code>ipconfig /renew</code> yaz: PC yeniden adres ister ve genellikle <b>aynı adresi</b> geri alır.</li>
+  </ol>
+  <figure id="fig-renew"></figure>
+  <figcaption>Şekil 8 – ipconfig /release ve /renew</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">9</span>(İsteğe bağlı) DHCP'nin 4 adımını simülasyonda izle</div>
+  <p>Bir PC adres alırken 4 paket gidip gelir. İlk harflerinden dolayı bu sürece <b>DORA</b> denir:</p>
+  <table>
+    <tr><th>Adım</th><th>Paket</th><th>Kimden → Kime</th><th>Anlamı</th></tr>
+    <tr><td>1</td><td><b>D</b>iscover</td><td>PC → herkese (yayın)</td><td>"Ağda DHCP sunucusu var mı? IP adresine ihtiyacım var."</td></tr>
+    <tr><td>2</td><td><b>O</b>ffer</td><td>Router → PC</td><td>"Bende var, sana 192.168.20.11'i önerebilirim."</td></tr>
+    <tr><td>3</td><td><b>R</b>equest</td><td>PC → herkese (yayın)</td><td>"Önerdiğin adresi istiyorum."</td></tr>
+    <tr><td>4</td><td><b>A</b>ck (Acknowledge)</td><td>Router → PC</td><td>"Tamam, adres artık senin."</td></tr>
+  </table>
+  <ol class="clicks">
+    <li><span class="c">1</span> Sağ alttan <b>Simulation</b> moduna geç.</li>
+    <li><span class="c">2</span> Simulation Panel'de <b>Edit Filters</b>'a tıkla, <b>Show All/None</b> ile hepsini kapat, sadece <b>DHCP</b>'yi işaretle.</li>
+    <li><span class="c">3</span> PC2'nin IP Configuration penceresinde önce <b>Static</b>'i, sonra tekrar <b>DHCP</b>'yi seç. Böylece PC2 yeniden adres ister.</li>
+    <li><span class="c">4</span> <b>Capture/Forward</b> (▶|) düğmesine tek tek basarak paketleri izle. Zarflara tıklayıp içeriğine bakabilirsin.</li>
+    <li><span class="c">5</span> Event List'te DHCP paketlerinin sırası görünür.</li>
+  </ol>
+  <figure id="fig-sim"></figure>
+  <figcaption>Şekil 9 – Simülasyon modunda DHCP paketleri</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">10</span>Kaydet</div>
+  <p><b>File › Save As</b> ile dosyayı <code>AdSoyad_DHCP.pkt</code> adıyla kaydet.</p>
+</div>
+
+<div class="step">
+  <h3>Bir şey çalışmıyorsa kontrol et</h3>
+  <p>PC'de <b>"DHCP failed. APIPA is being used."</b> yazıyorsa ve IP adresi <b>169.254.x.x</b> ile başlıyorsa PC, DHCP sunucusuna ulaşamamış demektir.
+  Windows'ta da aynı durum görülür: <b>169.254</b> ile başlayan adres, "DHCP'den adres alınamadı" anlamına gelir.</p>
+  <figure id="fig-apipa"></figure>
+  <figcaption>Şekil 10 – DHCP başarısız olduğunda görülen ekran</figcaption>
+  <div class="box warn">
+  <ul class="check" style="margin:4px 0 0;padding-left:4px">
+    <li>R1'in portunda <code>no shutdown</code> yaptın mı? Kablo uçları yeşil mi?</li>
+    <li>Havuzdaki <code>network</code> adresi, R1'in port adresiyle aynı ağda mı? (192.168.20.0)</li>
+    <li><code>default-router</code> doğru mu? Yanlışsa PC adres alır ama başka ağlara ulaşamaz.</li>
+    <li>Switch'teki port ışıkları turuncuysa 30 saniye bekle, sonra DHCP'yi tekrar seç.</li>
+    <li>R1'de <code>show running-config</code> ile DHCP komutlarını kontrol et.</li>
+    <li>Düzelttikten sonra PC'de <b>Static</b>'i seçip tekrar <b>DHCP</b>'yi seç ya da <code>ipconfig /renew</code> yaz.</li>
+  </ul></div>
+</div>
+
+<p style="font-size:8.5pt;color:#64748b;margin-top:20px">Not: Şekiller, Packet Tracer 8.x arayüzü esas alınarak hazırlanmış temsili çizimlerdir; sürüme göre simge yerleri, MAC adresleri ve ekran çıktıları küçük farklılıklar gösterebilir.</p>
+
+<script src="pt-common.js"></script>
+<script src="pt-lab.js"></script>
+<script>
+// ---------- Topoloji ----------
+function topo(o={}){
+  const R=o.R||[432,150], S=o.S||[432,255], Ps=o.Ps||[[262,360],[432,360],[602,360]];
+  let s='';
+  const cab=(a,b,c1,c2)=>{ const d=(f,col)=>{const x=a[0]+(b[0]-a[0])*f,y=a[1]+(b[1]-a[1])*f;return `<path d="M${x-5} ${y+4} L${x+5} ${y+4} L${x} ${y-5} Z" fill="${col}"/>`;}; return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#111" stroke-width="2"/>`+d(.25,c1)+d(.75,c2); };
+  s+=cab(R,S,o.rRed?'#dc2626':'#16a34a',o.rRed?'#ea580c':'#16a34a');
+  Ps.forEach(p=>{ s+=cab(S,p,'#16a34a','#16a34a'); });
+  s+=router(...R,1,'')+t(R[0]-12,R[1]+32,'R1',{a:'end',fs:11})+sw(...S,1,'')+t(S[0]+34,S[1]+5,'SW1',{fs:11});
+  Ps.forEach((p,i)=>{ s+=pc(...p,1,'PC'+(i+1)); });
+  return s;
+}
+
+// Plan
+(function(){
+  let s=`<svg viewBox="0 0 864 330" xmlns="http://www.w3.org/2000/svg">${DEFS}<rect width="864" height="330" fill="#fff"/>`;
+  s+=`<g transform="translate(0,-100)">${topo()}</g>`;
+  s+=t(470,40,'Gi0/0 – 192.168.20.1',{fs:10.5,fill:'#1d4ed8'})+t(470,95,'DHCP sunucusu (havuz: LAB)',{fs:10.5,fill:'#b91c1c',fw:'bold'});
+  s+=t(440,135,'Gi0/1',{fs:10,fill:'#1d4ed8'})+t(300,205,'Fa0/1',{fs:10,fill:'#1d4ed8'})+t(440,215,'Fa0/2',{fs:10,fill:'#1d4ed8'})+t(540,205,'Fa0/3',{fs:10,fill:'#1d4ed8'});
+  [262,432,602].forEach(x=>{ s+=t(x,302,'DHCP',{a:'middle',fs:10.5,fill:'#b91c1c',fw:'bold'}); });
+  s+=t(660,250,'Ağ: 192.168.20.0/24',{fs:11.5,fw:'bold',fill:'#334155'});
+  fill('fig-plan', s+'</svg>');
+})();
+// Şekil 1
+fill('fig-topo', mainWin({cat:3,subSet:'con',sub:0,list:'con',sel:2,hint:'Copper Straight-Through', ws: topo({rRed:true})}));
+// Şekil 2
+fill('fig-r1a', term({title:'R1',tabs:RT,active:'CLI',tabMark:'1',lines:[
+ 'Would you like to enter the initial configuration dialog? [yes/no]: no','',
+ 'Press RETURN to get started!','',
+ 'Router>enable','Router#configure terminal','Enter configuration commands, one per line.  End with CNTL/Z.',
+ 'Router(config)#hostname R1','R1(config)#interface gigabitEthernet 0/0',
+ 'R1(config-if)#ip address 192.168.20.1 255.255.255.0','R1(config-if)#no shutdown','',
+ '%LINK-5-CHANGED: Interface GigabitEthernet0/0, changed state to up','',
+ '%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0, changed state to up','',
+ 'R1(config-if)#exit','R1(config)#'],
+ dim:[0,2,6,12,14],
+ marks:[{l:9,n:'2',from:14},{l:10,n:'3',from:14}]
+}));
+// Şekil 3
+fill('fig-r1b', term({title:'R1',tabs:RT,active:'CLI',lines:[
+ 'R1(config)#ip dhcp excluded-address 192.168.20.1 192.168.20.10','R1(config)#ip dhcp pool LAB',
+ 'R1(dhcp-config)#network 192.168.20.0 255.255.255.0','R1(dhcp-config)#default-router 192.168.20.1',
+ 'R1(dhcp-config)#dns-server 8.8.8.8','R1(dhcp-config)#exit','R1(config)#end','R1#',
+ '%SYS-5-CONFIG_I: Configured from console by console','',
+ 'R1#copy running-config startup-config','Destination filename [startup-config]?','Building configuration...','[OK]','R1#'],
+ dim:[8,11,12],
+ marks:[{l:0,n:'1',from:11},{l:1,n:'2',from:11},{l:2,n:'3',from:16},{l:3,n:'4',from:16},{l:4,n:'5',from:16},{l:10,n:'6',from:3}]
+}));
+// Şekil 4
+fill('fig-pc1', ipConf('PC1',{dhcp:true,ip:'192.168.20.11',mask:'255.255.255.0',gw:'192.168.20.1',dns:'8.8.8.8',msg:'DHCP request successful.'},
+  mark(130,196,14,'1',{rx:34,ry:15,side:true}) + mark(611,195,14,'2',{rx:100,ry:15,side:true}) + mark(404,257,60,'3',{rx:170,ry:58,side:true})));
+// Şekil 5
+fill('fig-ipall', term({title:'PC1',tabs:PT,active:'Desktop',inner:'Command Prompt',lines:[
+ 'C:\\>ipconfig /all','','FastEthernet0 Connection:(default port)','',
+ '   Connection-specific DNS Suffix..: ','   Physical Address................: 0060.3E2A.1B01',
+ '   Link-local IPv6 Address.........: FE80::260:3EFF:FE2A:1B01','   IPv6 Address....................: ::',
+ '   IPv4 Address....................: 192.168.20.11','   Subnet Mask.....................: 255.255.255.0',
+ '   Default Gateway.................: ::','                                     192.168.20.1',
+ '   DHCP Servers....................: 192.168.20.1','   DHCPv6 IAID.....................: ',
+ '   DHCPv6 Client DUID..............: 00-01-00-01-1A-2B-3C-4D-00-60-3E-2A-1B-01',
+ '   DNS Servers.....................: ::','                                     8.8.8.8','','C:\\>'],
+ dim:[6,7,13,14],
+ marks:[{l:0,n:'1',from:3},{l:8,n:'2',from:3},{l:9,n:'2',from:3},{l:11,n:'3',from:37},{l:12,n:'4',from:3},{l:16,n:'5',from:37}]
+}));
+// Şekil 6
+fill('fig-bind', term({title:'R1',tabs:RT,active:'CLI',lines:[
+ 'R1#show ip dhcp binding',
+ 'IP address       Client-ID/              Lease expiration        Type',
+ '                 Hardware address',
+ '192.168.20.11    0060.3E2A.1B01           --                     Automatic',
+ '192.168.20.12    0001.6458.A902           --                     Automatic',
+ '192.168.20.13    00D0.BA4C.7703           --                     Automatic','',
+ 'R1#show ip dhcp pool','',
+ 'Pool LAB :',' Utilization mark (high/low)    : 100 / 0',' Subnet size (first/next)       : 0 / 0',
+ ' Total addresses                : 254',' Leased addresses               : 3',' Excluded addresses             : 10',
+ ' Pending event                  : none','',
+ ' 1 subnet is currently in the pool',' Current index        IP address range                    Leased/Excluded/Total',
+ ' 192.168.20.14        192.168.20.1     - 192.168.20.254    3    / 10    / 254','R1#'],
+ dim:[10,11,15],
+ marks:[{l:0,n:'1',from:3},{l:4,n:'2',len:30},{l:7,n:'3',from:3},{l:13,n:'3',from:1}]
+}));
+// Şekil 7
+fill('fig-ping', term({title:'PC1',tabs:PT,active:'Desktop',inner:'Command Prompt',lines:[
+ 'C:\\>ping 192.168.20.1','','Pinging 192.168.20.1 with 32 bytes of data:','',
+ 'Reply from 192.168.20.1: bytes=32 time<1ms TTL=255','Reply from 192.168.20.1: bytes=32 time<1ms TTL=255',
+ 'Reply from 192.168.20.1: bytes=32 time<1ms TTL=255','Reply from 192.168.20.1: bytes=32 time<1ms TTL=255','',
+ 'C:\\>ping 192.168.20.13','','Pinging 192.168.20.13 with 32 bytes of data:','',
+ 'Reply from 192.168.20.13: bytes=32 time<1ms TTL=128','Reply from 192.168.20.13: bytes=32 time<1ms TTL=128',
+ 'Reply from 192.168.20.13: bytes=32 time<1ms TTL=128','Reply from 192.168.20.13: bytes=32 time<1ms TTL=128','',
+ 'Ping statistics for 192.168.20.13:','    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),'],
+ marks:[{l:0,n:'1',from:3},{l:9,n:'2',from:3}]
+}));
+// Şekil 8
+fill('fig-renew', term({title:'PC1',tabs:PT,active:'Desktop',inner:'Command Prompt',lines:[
+ 'C:\\>ipconfig /release','','   IP Address......................: 0.0.0.0','   Subnet Mask.....................: 0.0.0.0',
+ '   Default Gateway.................: 0.0.0.0','   DNS Server......................: 0.0.0.0','',
+ 'C:\\>ipconfig /renew','','   IP Address......................: 192.168.20.11','   Subnet Mask.....................: 255.255.255.0',
+ '   Default Gateway.................: 192.168.20.1','   DNS Server......................: 8.8.8.8','','C:\\>'],
+ marks:[{l:0,n:'1',from:3},{l:2,n:'1',from:3},{l:7,n:'2',from:3},{l:9,n:'2',from:3}]
+}));
+// Şekil 9 – Simülasyon
+(function(){
+  const R=[250,150],S=[250,255],Ps=[[110,360],[250,360],[390,360]];
+  let ws=topo({R,S,Ps});
+  ws+=`<rect x="232" y="296" width="18" height="12" fill="#fde68a" stroke="#a16207"/><path d="M232 296 l9 6 l9 -6" stroke="#a16207" fill="none"/>`;
+  const px=480, py=106;
+  ws+=`<rect x="${px}" y="${py}" width="380" height="320" fill="#fff" stroke="#64748b"/><rect x="${px}" y="${py}" width="380" height="20" fill="#e2e8f0"/>`+t(px+10,py+15,'Simulation Panel',{fs:10.5,fw:'bold'});
+  ws+=t(px+10,py+38,'Event List',{fs:10,fw:'bold'});
+  ws+=`<rect x="${px+10}" y="${py+44}" width="360" height="20" fill="#f1f5f9" stroke="#cbd5e1"/>`+t(px+16,py+58,'Vis.   Time(sec)   Last Device   At Device   Type',{fs:9.5,ff:MONO});
+  const ev=[['0.000','--','PC2','DHCP'],['0.001','PC2','SW1','DHCP'],['0.002','SW1','R1','DHCP'],['0.002','SW1','PC1','DHCP'],['0.003','R1','SW1','DHCP'],['0.004','SW1','PC2','DHCP'],['0.005','PC2','SW1','DHCP']];
+  ev.forEach((e,i)=>{ const y=py+66+i*20; ws+=`<rect x="${px+10}" y="${y}" width="360" height="20" fill="${i===4?'#dbeafe':'#fff'}" stroke="#e2e8f0"/>`+t(px+16,y+14,'Vis.',{fs:9.5,fill:'#64748b',ff:MONO})+t(px+70,y+14,e[0],{fs:9.5,ff:MONO})+t(px+150,y+14,e[1],{fs:9.5,ff:MONO})+t(px+232,y+14,e[2],{fs:9.5,ff:MONO})+`<rect x="${px+312}" y="${y+5}" width="10" height="10" fill="#a78bfa"/>`+t(px+326,y+14,e[3],{fs:9.5,ff:MONO}); });
+  const by=py+218;
+  ws+=`<rect x="${px+90}" y="${by}" width="40" height="28" fill="#1e3a5f"/>${t(px+110,by+19,'◀|',{a:'middle',fs:11,fill:'#fff'})}<rect x="${px+138}" y="${by}" width="40" height="28" fill="#1e3a5f"/>${t(px+158,by+19,'▶',{a:'middle',fs:12,fill:'#fff'})}<rect x="${px+186}" y="${by}" width="40" height="28" fill="#1e3a5f"/>${t(px+206,by+19,'▶|',{a:'middle',fs:11,fill:'#fff'})}`;
+  ws+=t(px+10,by+50,'Event List Filters - Visible Events: DHCP',{fs:10});
+  ws+=`<rect x="${px+10}" y="${by+62}" width="170" height="26" fill="#2563eb"/>${t(px+95,by+79,'Edit Filters',{a:'middle',fs:11,fill:'#fff'})}<rect x="${px+190}" y="${by+62}" width="170" height="26" fill="#1e3a5f"/>${t(px+275,by+79,'Show All/None',{a:'middle',fs:11,fill:'#fff'})}`;
+  fill('fig-sim', mainWin({cat:1,subSet:'end',sub:0,list:'end',sim:true,ws,
+    marks: mark(861,522,26,'1',{rx:34,ry:26}) + mark(px+95,by+75,14,'2',{rx:92,ry:17,side:true}) + mark(250,372,30,'3') + mark(px+206,by+14,18,'4',{rx:26,ry:18}) + mark(px+190,py+136,60,'5',{rx:186,ry:72,side:true})
+  }));
+})();
+// Şekil 10 – APIPA
+fill('fig-apipa', ipConf('PC1',{dhcp:true,ip:'169.254.27.1',mask:'255.255.0.0',gw:'0.0.0.0',dns:'0.0.0.0',msg:'DHCP failed. APIPA is being used.',msgColor:'#b91c1c'},
+  mark(633,195,14,'!',{rx:124,ry:15}) + mark(404,225,13,'!',{rx:166,ry:13,side:true})));
+</script>
+</body>
+</html>
