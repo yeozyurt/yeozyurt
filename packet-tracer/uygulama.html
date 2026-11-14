@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Packet Tracer IP Adresleme ve Alt Ağ Uygulaması</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif; color: #1f2937; font-size: 10.5pt; line-height: 1.45; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4px; color: #0f3d63; }
+  h2 { font-size: 14pt; color: #0f3d63; border-bottom: 2px solid #0f3d63; padding-bottom: 3px; margin: 18px 0 8px; }
+  h3 { font-size: 11.5pt; margin: 12px 0 4px; }
+  .cover { border: 3px solid #0f3d63; border-radius: 10px; padding: 22px; margin-bottom: 14px; }
+  .sub { color: #475569; font-size: 11pt; }
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin-top: 14px; font-size: 10.5pt; }
+  .meta div { border-bottom: 1px dotted #94a3b8; padding: 4px 0; }
+  .box { border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
+  .warn { border-left: 5px solid #f59e0b; background: #fffbeb; }
+  .tip { border-left: 5px solid #10b981; background: #ecfdf5; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 10pt; }
+  th, td { border: 1px solid #94a3b8; padding: 5px 7px; text-align: left; }
+  th { background: #0f3d63; color: #fff; }
+  td.blank { height: 24px; }
+  .step { break-inside: avoid; margin: 10px 0 14px; }
+  .step-h { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 12pt; color: #0f3d63; margin-bottom: 4px; }
+  .num { background: #e11d48; color: #fff; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-size: 11pt; flex: none; }
+  ol.clicks { margin: 4px 0 6px 0; padding-left: 22px; }
+  ol.clicks li { margin: 2px 0; }
+  .c { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; border: 2px solid #e11d48; color: #e11d48; font-weight: bold; font-size: 8.5pt; margin-right: 3px; }
+  figure { margin: 6px 0 0; }
+  figure svg { width: 100%; height: auto; border: 1px solid #94a3b8; border-radius: 4px; display: block; }
+  figcaption { font-size: 9pt; color: #475569; text-align: center; margin-top: 3px; font-style: italic; }
+  code, pre { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; }
+  pre { background: #0b1220; color: #d1fae5; padding: 8px 10px; border-radius: 5px; margin: 6px 0; white-space: pre-wrap; }
+  .pb { break-before: page; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .check li { list-style: none; margin: 3px 0; }
+  .check li::before { content: "☐  "; font-size: 12pt; }
+  .key { color: #b91c1c; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- ======================= KAPAK ======================= -->
+<div class="cover">
+  <h1>Packet Tracer Uygulaması</h1>
+  <div class="sub"><b>IP Adresleme ve Alt Ağ (Subnetting) Oluşturma</b> · Adım adım, ekran görüntülü öğrenci föyü</div>
+  <div class="meta">
+    <div>Ad Soyad: </div><div>Sınıf / No: </div>
+    <div>Tarih: </div><div>Süre: 2 ders saati (80 dk)</div>
+  </div>
+</div>
+
+<h2>1. Amaç ve Kazanımlar</h2>
+<p>Bu uygulamada <b>192.168.10.0/24</b> ağını 4 alt ağa böleceksin, iki alt ağı iki ayrı laboratuvara (LAN) vereceksin,
+cihazları Packet Tracer'da kurup IP adreslerini girecek ve <b>ping</b> ile bağlantıyı test edeceksin.</p>
+<ul>
+  <li>Alt ağ maskesini, ağ adresini, yayın (broadcast) adresini ve kullanılabilir IP aralığını hesaplar.</li>
+  <li>Packet Tracer'da router, switch ve PC ekler; doğru kabloyla bağlar.</li>
+  <li>Router arayüzlerine ve PC'lere statik IP, maske ve varsayılan ağ geçidi verir.</li>
+  <li>Farklı alt ağlardaki cihazlar arasında bağlantıyı test eder ve hataları bulur.</li>
+</ul>
+
+<h2>2. Senaryo</h2>
+<div class="box">
+Bir okulun <b>Bilişim Lab-1</b> ve <b>Bilişim Lab-2</b> sınıfları var. Okula <b>192.168.10.0/24</b> ağı verildi.
+İleride iki laboratuvar daha açılacağı için ağ <b>4 eşit alt ağa</b> bölünecek. Lab-1 ilk alt ağı, Lab-2 ikinci alt ağı kullanacak;
+kalan iki alt ağ yedekte kalacak. İki lab bir router üzerinden birbiriyle haberleşecek.
+</div>
+
+<h3>Topoloji</h3>
+<figure id="fig-topo-plan"></figure>
+
+<h2>3. Ön Hesaplama (kağıt üzerinde – Packet Tracer'a geçmeden önce)</h2>
+<p><b>Soru 1.</b> 4 alt ağ için ana bilgisayar (host) kısmından kaç bit ödünç almalısın? (2<sup>n</sup> ≥ 4) &nbsp; n = ______</p>
+<p><b>Soru 2.</b> Yeni önek (prefix) ve alt ağ maskesi nedir? &nbsp; /_____ &nbsp;&nbsp; Maske: _____._____._____._____</p>
+<p><b>Soru 3.</b> Her alt ağda toplam kaç adres, kaç kullanılabilir host var? &nbsp; Toplam: ______ &nbsp; Kullanılabilir: ______</p>
+<p><b>Soru 4.</b> Alt ağ tablosunu doldur:</p>
+<table>
+  <tr><th>Alt Ağ</th><th>Ağ Adresi</th><th>İlk Kullanılabilir IP</th><th>Son Kullanılabilir IP</th><th>Yayın (Broadcast)</th><th>Kullanım</th></tr>
+  <tr><td>1</td><td class="blank"></td><td></td><td></td><td></td><td>Lab-1</td></tr>
+  <tr><td>2</td><td class="blank"></td><td></td><td></td><td></td><td>Lab-2</td></tr>
+  <tr><td>3</td><td class="blank"></td><td></td><td></td><td></td><td>Yedek</td></tr>
+  <tr><td>4</td><td class="blank"></td><td></td><td></td><td></td><td>Yedek</td></tr>
+</table>
+
+<h3>Adresleme Tablosu (uygulamada bunu kullanacaksın)</h3>
+<table>
+  <tr><th>Cihaz</th><th>Arayüz</th><th>IP Adresi</th><th>Alt Ağ Maskesi</th><th>Varsayılan Ağ Geçidi</th></tr>
+  <tr><td>R1</td><td>GigabitEthernet0/0</td><td>192.168.10.1</td><td>255.255.255.192</td><td>—</td></tr>
+  <tr><td>R1</td><td>GigabitEthernet0/1</td><td>192.168.10.65</td><td>255.255.255.192</td><td>—</td></tr>
+  <tr><td>PC1</td><td>FastEthernet0</td><td>192.168.10.10</td><td>255.255.255.192</td><td>192.168.10.1</td></tr>
+  <tr><td>PC2</td><td>FastEthernet0</td><td>192.168.10.11</td><td>255.255.255.192</td><td>192.168.10.1</td></tr>
+  <tr><td>PC3</td><td>FastEthernet0</td><td>192.168.10.70</td><td>255.255.255.192</td><td>192.168.10.65</td></tr>
+  <tr><td>PC4</td><td>FastEthernet0</td><td>192.168.10.71</td><td>255.255.255.192</td><td>192.168.10.65</td></tr>
+</table>
+<div class="box tip"><b>İpucu:</b> Bir PC'nin varsayılan ağ geçidi, o PC'nin bağlı olduğu LAN'daki <b>router arayüzünün IP adresidir</b>.</div>
+
+<!-- ======================= UYGULAMA ======================= -->
+<h2 class="pb">4. Packet Tracer'da Uygulama – Adım Adım</h2>
+<div class="box warn"><b>Okuma rehberi:</b> Şekillerdeki <b style="color:#e11d48">kırmızı yuvarlaklar</b> tıklayacağın yeri,
+içindeki <b style="color:#e11d48">numaralar</b> tıklama sırasını gösterir. Metindeki <span class="c">1</span> işaretleri şekildeki numaralarla aynıdır.</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">1</span>Packet Tracer ekranını tanı</div>
+  <p>Programı aç. Ekranın bölümlerini öğren; sonraki adımlarda hep bu bölgeleri kullanacağız.</p>
+  <ol class="clicks">
+    <li><span class="c">A</span> <b>Çalışma alanı:</b> Cihazları buraya bırakırsın.</li>
+    <li><span class="c">B</span> <b>Cihaz kategorileri:</b> Üst satır ana kategori, alt satır alt kategori.</li>
+    <li><span class="c">C</span> <b>Cihaz listesi:</b> Seçtiğin kategorideki modeller.</li>
+    <li><span class="c">D</span> <b>Gerçek Zaman / Simülasyon</b> modu düğmeleri.</li>
+  </ol>
+  <figure id="fig1"></figure>
+  <figcaption>Şekil 1 – Packet Tracer ana penceresinin bölümleri</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">2</span>Router ekle (R1 – 2911)</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> Sol alttan <b>Network Devices</b> (Ağ Cihazları) simgesine tıkla.</li>
+    <li><span class="c">2</span> Alt satırdan <b>Routers</b> simgesine tıkla.</li>
+    <li><span class="c">3</span> Listeden <b>2911</b> modelini seç.</li>
+    <li><span class="c">4</span> Çalışma alanında üst ortaya tıkla (veya sürükleyip bırak). Router <b>Router0</b> adıyla gelir.</li>
+  </ol>
+  <figure id="fig2"></figure>
+  <figcaption>Şekil 2 – Router seçimi ve çalışma alanına yerleştirme</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">3</span>İki switch ekle (SW1, SW2 – 2960)</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> <b>Network Devices</b> kategorisi seçiliyken alt satırdan <b>Switches</b> simgesine tıkla.</li>
+    <li><span class="c">2</span> Listeden <b>2960</b> modelini seç.</li>
+    <li><span class="c">3</span> Router'ın sol altına bir switch bırak, <span class="c">4</span> sağ altına bir switch daha bırak.</li>
+  </ol>
+  <figure id="fig3"></figure>
+  <figcaption>Şekil 3 – Switch seçimi ve yerleştirme</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">4</span>Dört PC ekle</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> Üst satırdan <b>End Devices</b> (Uç Cihazlar) simgesine tıkla.</li>
+    <li><span class="c">2</span> Alt satırda <b>End Devices</b> seçili olsun.</li>
+    <li><span class="c">3</span> Listeden <b>PC</b> simgesini seç.</li>
+    <li><span class="c">4</span> Her switch'in altına ikişer PC bırak (toplam 4 PC).</li>
+  </ol>
+  <div class="box tip"><b>Kısayol:</b> <b>Ctrl</b> tuşuna basılı tutarak PC'yi seçersen birden fazla kez tıklayarak art arda PC bırakabilirsin. Bitince <b>Esc</b>'ye bas.</div>
+  <figure id="fig4"></figure>
+  <figcaption>Şekil 4 – PC seçimi ve yerleştirme</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">5</span>Cihazları yeniden adlandır</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> Çalışma alanındaki cihazın altındaki isme (ör. <b>Router0</b>) tıkla.</li>
+    <li><span class="c">2</span> İsmi sil, yeni ismi yaz (<b>R1</b>) ve <b>Enter</b>'a bas.</li>
+    <li>Aynı şekilde: Switch0 → <b>SW1</b>, Switch1 → <b>SW2</b>, PC0…PC3 → <b>PC1…PC4</b>.</li>
+  </ol>
+  <figure id="fig5"></figure>
+  <figcaption>Şekil 5 – Cihaz isminin değiştirilmesi</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">6</span>Kabloları bağla (Copper Straight-Through)</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> Üst satırdan <b>Connections</b> (şimşek simgesi) kategorisine tıkla.</li>
+    <li><span class="c">2</span> Listeden <b>Copper Straight-Through</b> (düz siyah çizgi) kablosunu seç.</li>
+    <li><span class="c">3</span> <b>R1</b>'e tıkla → açılan port listesinden <span class="c">4</span> <b>GigabitEthernet0/0</b>'ı seç.</li>
+    <li><span class="c">5</span> <b>SW1</b>'e tıkla → <b>GigabitEthernet0/1</b>'i seç.</li>
+  </ol>
+  <figure id="fig6"></figure>
+  <figcaption>Şekil 6 – Kablo seçimi ve router portunun seçilmesi</figcaption>
+  <p>Aynı yöntemle diğer bağlantıları yap:</p>
+  <table>
+    <tr><th>Kablo</th><th>Bir uç</th><th>Diğer uç</th></tr>
+    <tr><td>1</td><td>R1 – GigabitEthernet0/0</td><td>SW1 – GigabitEthernet0/1</td></tr>
+    <tr><td>2</td><td>R1 – GigabitEthernet0/1</td><td>SW2 – GigabitEthernet0/1</td></tr>
+    <tr><td>3</td><td>SW1 – FastEthernet0/1</td><td>PC1 – FastEthernet0</td></tr>
+    <tr><td>4</td><td>SW1 – FastEthernet0/2</td><td>PC2 – FastEthernet0</td></tr>
+    <tr><td>5</td><td>SW2 – FastEthernet0/1</td><td>PC3 – FastEthernet0</td></tr>
+    <tr><td>6</td><td>SW2 – FastEthernet0/2</td><td>PC4 – FastEthernet0</td></tr>
+  </table>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">7</span>Bağlantı ışıklarını kontrol et</div>
+  <p>Kablolar bitince topoloji Şekil 7'deki gibi görünmeli. Kablo uçlarındaki ışıklar:</p>
+  <ul>
+    <li><b style="color:#16a34a">Yeşil</b>: Bağlantı çalışıyor. &nbsp; <b style="color:#ea580c">Turuncu</b>: Switch portu hazırlanıyor (30 sn kadar bekle).</li>
+    <li><b style="color:#dc2626">Kırmızı</b>: Port kapalı. <b>Router portları başlangıçta kapalıdır</b> – Adım 8'de açacağız. <span class="c">!</span></li>
+  </ul>
+  <figure id="fig7"></figure>
+  <figcaption>Şekil 7 – Kablolama tamamlandığında topoloji (router portları henüz kırmızı)</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">8</span>Router arayüzlerine IP ver (Config sekmesi)</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> Çalışma alanında <b>R1</b>'e tıkla, pencere açılır. Üstten <b>Config</b> sekmesine tıkla.</li>
+    <li><span class="c">2</span> Soldaki listede <b>INTERFACE → GigabitEthernet0/0</b>'a tıkla.</li>
+    <li><span class="c">3</span> <b>Port Status</b> yanındaki <b>On</b> kutusunu işaretle (portu açar).</li>
+    <li><span class="c">4</span> <b>IPv4 Address</b> kutusuna <code>192.168.10.1</code> yaz.</li>
+    <li><span class="c">5</span> <b>Subnet Mask</b> kutusuna <code>255.255.255.192</code> yaz (kutuya tıklayınca kendiliğinden yazılan maskeyi düzelt!).</li>
+    <li>Sonra <b>GigabitEthernet0/1</b>'i seç ve aynısını yap: <b>On</b>, <code>192.168.10.65</code>, <code>255.255.255.192</code>.</li>
+  </ol>
+  <figure id="fig8"></figure>
+  <figcaption>Şekil 8 – R1 › Config › GigabitEthernet0/0 ayarları</figcaption>
+  <div class="box warn"><b>Dikkat:</b> Packet Tracer maskeyi otomatik olarak <b>255.255.255.0</b> yazar. Bu yanlıştır; /26 için <b>255.255.255.192</b> olmalı.</div>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">9</span>(Alternatif) Aynı işlemi CLI ile yap</div>
+  <p>İleri seviye öğrenciler Adım 8 yerine <b>CLI</b> sekmesini kullanabilir: <span class="c">1</span> <b>CLI</b> sekmesine tıkla,
+  <span class="c">2</span> "Would you like to enter the initial configuration dialog?" sorusuna <code>no</code> yaz, Enter'a bas ve aşağıdaki komutları gir.</p>
+<pre>Router&gt; enable
+Router# configure terminal
+Router(config)# hostname R1
+R1(config)# interface gigabitEthernet 0/0
+R1(config-if)# ip address 192.168.10.1 255.255.255.192
+R1(config-if)# no shutdown
+R1(config-if)# exit
+R1(config)# interface gigabitEthernet 0/1
+R1(config-if)# ip address 192.168.10.65 255.255.255.192
+R1(config-if)# no shutdown
+R1(config-if)# end
+R1# write memory</pre>
+  <figure id="fig9"></figure>
+  <figcaption>Şekil 9 – R1 › CLI sekmesi</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">10</span>PC'lere IP ver (Desktop › IP Configuration)</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> <b>PC1</b>'e tıkla, açılan pencerede <b>Desktop</b> sekmesine tıkla.</li>
+    <li><span class="c">2</span> <b>IP Configuration</b> simgesine tıkla.</li>
+  </ol>
+  <figure id="fig10"></figure>
+  <figcaption>Şekil 10 – PC1 › Desktop sekmesi</figcaption>
+</div>
+
+<div class="step">
+  <ol class="clicks" start="3">
+    <li><span class="c">3</span> <b>Static</b> seçeneğini işaretle.</li>
+    <li><span class="c">4</span> <b>IPv4 Address:</b> <code>192.168.10.10</code></li>
+    <li><span class="c">5</span> <b>Subnet Mask:</b> <code>255.255.255.192</code></li>
+    <li><span class="c">6</span> <b>Default Gateway:</b> <code>192.168.10.1</code></li>
+    <li>Pencereyi kapat (değerler anında kaydedilir). PC2, PC3 ve PC4 için adresleme tablosundaki değerlerle tekrarla.</li>
+  </ol>
+  <figure id="fig11"></figure>
+  <figcaption>Şekil 11 – PC1 › Desktop › IP Configuration</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">11</span>Bağlantıyı test et (ping)</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> <b>PC1 › Desktop › Command Prompt</b> uygulamasını aç.</li>
+    <li><span class="c">2</span> Önce kendi ağ geçidini test et: <code>ping 192.168.10.1</code></li>
+    <li><span class="c">3</span> Sonra diğer labdaki PC3'ü test et: <code>ping 192.168.10.70</code></li>
+  </ol>
+  <figure id="fig12"></figure>
+  <figcaption>Şekil 12 – PC1 Komut İstemi'nde ping testi</figcaption>
+  <div class="box tip">İlk ping'de 1 paketin <b>"Request timed out"</b> vermesi normaldir (ARP çözümlemesi). Komutu tekrar çalıştır; 4/4 cevap gelmeli.
+  <code>ipconfig</code> komutuyla PC'nin IP ayarlarını da kontrol edebilirsin.</div>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">12</span>(İsteğe bağlı) Simülasyon modunda paketi izle</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> Sağ alttaki <b>Simulation</b> sekmesine tıkla.</li>
+    <li><span class="c">2</span> Sağ taraftaki araç çubuğundan <b>Add Simple PDU</b> (kapalı zarf) simgesini seç.</li>
+    <li><span class="c">3</span> Önce <b>PC1</b>'e, <span class="c">4</span> sonra <b>PC4</b>'e tıkla.</li>
+    <li><span class="c">5</span> Simulation panelinde <b>Play</b> (▶) ya da <b>Capture/Forward</b>'a basarak zarfın PC1 → SW1 → R1 → SW2 → PC4 yolunu izle.</li>
+  </ol>
+  <figure id="fig13"></figure>
+  <figcaption>Şekil 13 – Simülasyon modunda PDU gönderimi</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">13</span>Kaydet</div>
+  <p><b>File › Save As</b> ile dosyayı <code>AdSoyad_AltAg.pkt</code> adıyla kaydet ve öğretmenine teslim et.</p>
+</div>
+
+<!-- ======================= DEĞERLENDİRME ======================= -->
+<h2 class="pb">5. Test Sonuçları ve Sorular</h2>
+<table>
+  <tr><th>Kaynak</th><th>Hedef</th><th>Hedef IP</th><th>Sonuç (Başarılı / Başarısız)</th></tr>
+  <tr><td>PC1</td><td>PC2</td><td>192.168.10.11</td><td class="blank"></td></tr>
+  <tr><td>PC1</td><td>R1 G0/0</td><td>192.168.10.1</td><td class="blank"></td></tr>
+  <tr><td>PC1</td><td>PC3</td><td>192.168.10.70</td><td class="blank"></td></tr>
+  <tr><td>PC2</td><td>PC4</td><td>192.168.10.71</td><td class="blank"></td></tr>
+  <tr><td>PC4</td><td>R1 G0/0</td><td>192.168.10.1</td><td class="blank"></td></tr>
+</table>
+
+<p><b>Soru 5.</b> PC3'ün varsayılan ağ geçidini silersen PC3 → PC4 ve PC3 → PC1 ping'leri ne olur? Neden?</p>
+<p>__________________________________________________________________________________________</p>
+<p><b>Soru 6.</b> PC1'in maskesini yanlışlıkla 255.255.255.0 yaparsan PC1 → PC3 ping'i başarılı olur mu? Neden?</p>
+<p>__________________________________________________________________________________________</p>
+<p><b>Soru 7.</b> Lab-3 açılırsa hangi alt ağı kullanır? Router'ın G0/2 arayüzüne hangi IP'yi verirsin?</p>
+<p>__________________________________________________________________________________________</p>
+
+<h3>Sorun Giderme Kontrol Listesi</h3>
+<ul class="check">
+  <li>Router portlarında <b>Port Status: On</b> işaretli mi? (CLI'da <code>no shutdown</code>)</li>
+  <li>Maske her yerde <b>255.255.255.192</b> mi?</li>
+  <li>PC'nin ağ geçidi, kendi LAN'ındaki router arayüzü mü? (Lab-1 → .1, Lab-2 → .65)</li>
+  <li>PC'nin IP'si doğru alt ağın aralığında mı? (Lab-1: .1–.62, Lab-2: .65–.126)</li>
+  <li>Kablo ışıkları yeşil mi?</li>
+  <li>R1'de <code>show ip interface brief</code> komutu her iki port için <b>up / up</b> gösteriyor mu?</li>
+</ul>
+
+<h3>Değerlendirme</h3>
+<table>
+  <tr><th>Ölçüt</th><th>Puan</th><th>Alınan</th></tr>
+  <tr><td>Alt ağ hesaplamaları (Soru 1–4)</td><td>25</td><td></td></tr>
+  <tr><td>Topoloji kurulumu ve kablolama</td><td>20</td><td></td></tr>
+  <tr><td>Router yapılandırması</td><td>20</td><td></td></tr>
+  <tr><td>PC yapılandırması</td><td>15</td><td></td></tr>
+  <tr><td>Ping testleri</td><td>10</td><td></td></tr>
+  <tr><td>Sorular (5–7)</td><td>10</td><td></td></tr>
+  <tr><th>Toplam</th><th>100</th><th></th></tr>
+</table>
+
+<!-- ======================= CEVAP ANAHTARI ======================= -->
+<h2 class="pb">6. Öğretmen İçin Cevap Anahtarı</h2>
+<p><b>Soru 1:</b> <span class="key">n = 2</span> (2² = 4 alt ağ)</p>
+<p><b>Soru 2:</b> <span class="key">/26 – 255.255.255.192</span> (son oktet 11000000 = 192)</p>
+<p><b>Soru 3:</b> <span class="key">Toplam 64 adres, 62 kullanılabilir host</span> (2⁶ − 2)</p>
+<p><b>Soru 4:</b></p>
+<table>
+  <tr><th>Alt Ağ</th><th>Ağ Adresi</th><th>İlk IP</th><th>Son IP</th><th>Yayın</th><th>Kullanım</th></tr>
+  <tr><td>1</td><td>192.168.10.0</td><td>192.168.10.1</td><td>192.168.10.62</td><td>192.168.10.63</td><td>Lab-1</td></tr>
+  <tr><td>2</td><td>192.168.10.64</td><td>192.168.10.65</td><td>192.168.10.126</td><td>192.168.10.127</td><td>Lab-2</td></tr>
+  <tr><td>3</td><td>192.168.10.128</td><td>192.168.10.129</td><td>192.168.10.190</td><td>192.168.10.191</td><td>Yedek</td></tr>
+  <tr><td>4</td><td>192.168.10.192</td><td>192.168.10.193</td><td>192.168.10.254</td><td>192.168.10.255</td><td>Yedek</td></tr>
+</table>
+<p><b>Ping testleri:</b> Tümü <span class="key">başarılı</span> olmalı (ilk denemede bir zaman aşımı normal).</p>
+<p><b>Soru 5:</b> <span class="key">PC3 → PC4 başarılı</span> (aynı alt ağ, router gerekmez); <span class="key">PC3 → PC1 başarısız</span> (başka alt ağa giden paketin ağ geçidi yok).</p>
+<p><b>Soru 6:</b> <span class="key">Başarısız.</span> PC1, /24 maskeyle 192.168.10.70'i kendi ağında sanır; paketi ağ geçidine göndermez, ARP ile doğrudan arar ve cevap alamaz.</p>
+<p><b>Soru 7:</b> <span class="key">3. alt ağ: 192.168.10.128/26; G0/2 = 192.168.10.129, maske 255.255.255.192</span>.</p>
+
+<h3>Ek Görev (hızlı bitirenler için)</h3>
+<p>Lab-3'ü ekle: R1'e üçüncü switch'i (SW3) G0/2'den bağla, iki PC ekle ve 192.168.10.128/26 alt ağından adres ver (ağ geçidi 192.168.10.129). Tüm lablar arası ping'i doğrula.</p>
+
+<p style="font-size:8.5pt;color:#64748b;margin-top:20px">Not: Şekiller, Packet Tracer 8.x arayüzü esas alınarak hazırlanmış temsili çizimlerdir; sürüme göre simge yerleri küçük farklılıklar gösterebilir.</p>
+
+<script>
+// ===================== Çizim yardımcıları =====================
+const RED = '#e11d48';
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function t(x,y,s,o={}){return `<text x="${x}" y="${y}" font-size="${o.fs||11}" fill="${o.fill||'#111'}" font-weight="${o.fw||'normal'}" text-anchor="${o.a||'start'}" font-family="${o.ff||'Liberation Sans, Arial'}">${esc(s)}</text>`;}
+function mark(x,y,r,n,o={}){ // kırmızı yuvarlak + numara rozeti
+  const rx=o.rx||r, ry=o.ry||r;
+  const bx = Math.min(x + rx*0.78 + 4, 886), by = y - ry*0.78 - 4;
+  return `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="none" stroke="${RED}" stroke-width="3.5"/>
+  <circle cx="${bx}" cy="${by}" r="11" fill="${RED}" stroke="#fff" stroke-width="2"/>${t(bx,by+4,n,{fs:12,fill:'#fff',fw:'bold',a:'middle'})}`;
+}
+function arrow(x1,y1,x2,y2){
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${RED}" stroke-width="3" stroke-dasharray="7 5" marker-end="url(#ah)"/>`;
+}
+const DEFS = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${RED}"/></marker>
+<pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0 L0 0 0 20" fill="none" stroke="#eef2f7" stroke-width="1"/></pattern></defs>`;
+
+// Cihaz simgeleri (temsili)
+function router(x,y,s=1,label){
+  return `<g transform="translate(${x},${y}) scale(${s})">
+   <ellipse cx="0" cy="8" rx="26" ry="9" fill="#1e5a8a"/><rect x="-26" y="-6" width="52" height="14" fill="#2b74b0"/>
+   <ellipse cx="0" cy="-6" rx="26" ry="9" fill="#5aa3dc"/>
+   <path d="M-14 -6 h10 m-4 -3 l4 3 l-4 3 M14 -6 h-10 m4 -3 l-4 3 l4 3" stroke="#fff" stroke-width="1.8" fill="none"/>
+  </g>${label?t(x,y+30*s,label,{a:'middle',fs:11}):''}`;
+}
+function sw(x,y,s=1,label){
+  return `<g transform="translate(${x},${y}) scale(${s})">
+   <path d="M-28 -6 L-18 -14 L28 -14 L18 -6 Z" fill="#6bb1e6"/><rect x="-28" y="-6" width="46" height="16" fill="#2b74b0"/>
+   <path d="M18 -6 L28 -14 L28 2 L18 10 Z" fill="#1e5a8a"/>
+   <path d="M-20 -10 h10 m-3 -2 l3 2 l-3 2 M8 -10 h-10 m3 -2 l-3 2 l3 2" stroke="#fff" stroke-width="1.4" fill="none"/>
+  </g>${label?t(x,y+28*s,label,{a:'middle',fs:11}):''}`;
+}
+function pc(x,y,s=1,label){
+  return `<g transform="translate(${x},${y}) scale(${s})">
+   <rect x="-18" y="-18" width="36" height="25" rx="2" fill="#374151"/><rect x="-15" y="-15" width="30" height="19" fill="#7dd3fc"/>
+   <rect x="-4" y="7" width="8" height="5" fill="#6b7280"/><rect x="-12" y="12" width="24" height="4" rx="1" fill="#4b5563"/>
+  </g>${label?t(x,y+30*s,label,{a:'middle',fs:11}):''}`;
+}
+function bolt(x,y,s=1){return `<path transform="translate(${x},${y}) scale(${s})" d="M3 -14 L-8 2 L-1 2 L-4 14 L8 -3 L1 -3 Z" fill="#f59e0b" stroke="#92400e" stroke-width="1"/>`;}
+function laptop(x,y){return `<g transform="translate(${x},${y})"><rect x="-15" y="-14" width="30" height="19" fill="#374151"/><rect x="-12" y="-11" width="24" height="13" fill="#7dd3fc"/><path d="M-19 5 h38 l-4 6 h-30 z" fill="#4b5563"/></g>`;}
+function server(x,y){return `<g transform="translate(${x},${y})"><rect x="-11" y="-17" width="22" height="32" fill="#374151"/><rect x="-8" y="-13" width="16" height="3" fill="#9ca3af"/><rect x="-8" y="-7" width="16" height="3" fill="#9ca3af"/></g>`;}
+function genIcon(x,y,kind){
+  switch(kind){
+    case 'router': return router(x,y,0.55);
+    case 'switch': return sw(x,y,0.55);
+    case 'pc': return pc(x,y,0.65);
+    case 'bolt': return bolt(x,y,0.9);
+    case 'laptop': return laptop(x,y);
+    case 'server': return server(x,y);
+    case 'hub': return `<rect x="${x-14}" y="${y-6}" width="28" height="12" fill="#64748b"/>`;
+    case 'wifi': return `<path d="M${x-12} ${y} q12 -12 24 0 M${x-7} ${y+4} q7 -7 14 0" stroke="#2b74b0" stroke-width="2.5" fill="none"/><circle cx="${x}" cy="${y+8}" r="2.5" fill="#2b74b0"/>`;
+    case 'shield': return `<path d="M${x} ${y-12} l11 4 v6 q0 9 -11 14 q-11 -5 -11 -14 v-6 z" fill="#ef4444"/>`;
+    case 'cloud': return `<path d="M${x-12} ${y+6} q-6 0 -6 -6 q0 -6 7 -6 q2 -7 10 -6 q7 0 8 7 q6 0 6 6 q0 5 -6 5 z" fill="#94a3b8"/>`;
+    case 'comp': return `<rect x="${x-12}" y="${y-9}" width="24" height="18" fill="#16a34a"/><rect x="${x-8}" y="${y-5}" width="16" height="3" fill="#bbf7d0"/>`;
+    case 'misc': return `<circle cx="${x}" cy="${y}" r="11" fill="#a855f7"/>`;
+    case 'multi': return `<circle cx="${x-5}" cy="${y}" r="8" fill="#0ea5e9"/><circle cx="${x+6}" cy="${y}" r="8" fill="#22c55e" opacity=".85"/>`;
+    case 'home': return `<path d="M${x-12} ${y+10} v-10 l12 -10 l12 10 v10 z" fill="#f97316"/>`;
+    case 'iot': return `<circle cx="${x}" cy="${y}" r="10" fill="none" stroke="#14b8a6" stroke-width="3"/><circle cx="${x}" cy="${y}" r="3" fill="#14b8a6"/>`;
+    case 'cable': return `<line x1="${x-14}" y1="${y+10}" x2="${x+14}" y2="${y-10}" stroke="#111" stroke-width="2.5"/>`;
+    case 'cableD': return `<line x1="${x-14}" y1="${y+10}" x2="${x+14}" y2="${y-10}" stroke="#111" stroke-width="2.5" stroke-dasharray="4 3"/>`;
+    case 'console': return `<path d="M${x-14} ${y+8} q14 -22 28 -16" stroke="#38bdf8" stroke-width="2.5" fill="none"/>`;
+    case 'fiber': return `<line x1="${x-14}" y1="${y+10}" x2="${x+14}" y2="${y-10}" stroke="#f97316" stroke-width="2.5"/>`;
+    case 'serial': return `<path d="M${x-14} ${y+10} l10 -8 l6 4 l12 -14" stroke="#dc2626" stroke-width="2.5" fill="none"/>`;
+    default: return `<rect x="${x-11}" y="${y-11}" width="22" height="22" fill="#cbd5e1"/>`;
+  }
+}
+
+// Ana pencere (temsili Packet Tracer 8.x düzeni). viewBox 900x560
+const CATS = [['Network Devices','router'],['End Devices','pc'],['Components','comp'],['Connections','bolt'],['Miscellaneous','misc'],['Multiuser','multi']];
+const SUBS = {
+  net: [['Routers','router'],['Switches','switch'],['Hubs','hub'],['Wireless Devices','wifi'],['Security','shield'],['WAN Emulation','cloud']],
+  end: [['End Devices','pc'],['Home','home'],['Smart City','iot'],['Industrial','comp'],['Power Grid','misc'],['Boundary','cloud']],
+  con: [['Connections','bolt']]
+};
+const LISTS = {
+  routers: [['4331','router'],['4321','router'],['1941','router'],['2901','router'],['2911','router'],['819IOX','router'],['829','router'],['1240','router']],
+  switches: [['2960','switch'],['3560-24PS','switch'],['3650-24PS','switch'],['2950-24','switch'],['2950T','switch'],['Bridge-PT','switch']],
+  end: [['PC','pc'],['Laptop','laptop'],['Server','server'],['Printer','comp'],['Phone','misc'],['TV','misc'],['Tablet','misc'],['Smartphone','misc']],
+  con: [['Automatic','bolt'],['Console','console'],['Copper Straight-Through','cable'],['Copper Cross-Over','cableD'],['Fiber','fiber'],['Phone','cableD'],['Coaxial','fiber'],['Serial DCE','serial']]
+};
+// konum hesaplayıcılar (işaret koymak için)
+const catPos = i => [22+i*40, 455];
+const subPos = i => [22+i*40, 503];
+const listPos = i => [300+i*58, 478];
+
+function mainWin(o){
+  const cat=o.cat??0, subSet=SUBS[o.subSet||'net'], sub=o.sub??0, list=LISTS[o.list||'routers'], sel=o.sel??-1;
+  let s = `<svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg">${DEFS}`;
+  // başlık + menü + araç
+  s += `<rect width="900" height="560" fill="#e5e7eb"/>`;
+  s += `<rect width="900" height="26" fill="#1f3b57"/>${t(12,17,'Cisco Packet Tracer - '+(o.file||'Untitled'),{fill:'#fff',fs:11})}`;
+  s += `<g>${['×','□','–'].map((c,i)=>t(885-i*24,18,c,{fill:'#fff',fs:13,a:'middle'})).join('')}</g>`;
+  s += `<rect y="26" width="900" height="22" fill="#f3f4f6"/>`;
+  ['File','Edit','Options','View','Tools','Extensions','Window','Help'].forEach((m,i)=>{ s+=t(12+i*62,41,m,{fs:11}); });
+  s += `<rect y="48" width="900" height="30" fill="#e5e7eb" stroke="#cbd5e1"/>`;
+  for(let i=0;i<16;i++){ s+=`<rect x="${10+i*28}" y="53" width="20" height="20" rx="3" fill="#cbd5e1"/>`; }
+  s += `<rect y="78" width="900" height="22" fill="#d1d5db"/><rect x="6" y="80" width="70" height="20" fill="#fff"/>${t(41,94,'Logical',{a:'middle',fs:11,fw:'bold'})}${t(110,94,'Physical',{a:'middle',fs:11,fill:'#555'})}`;
+  // sağ araç çubuğu
+  s += `<rect x="864" y="100" width="36" height="330" fill="#f3f4f6" stroke="#cbd5e1"/>`;
+  const rt = ['select','inspect','delete','resize','note','draw','pdu','cpdu'];
+  rt.forEach((k,i)=>{ const yy=112+i*36; s+=`<rect x="870" y="${yy}" width="24" height="24" rx="3" fill="#e2e8f0" stroke="#94a3b8"/>`;
+    if(k==='pdu') s+=`<rect x="874" y="${yy+7}" width="16" height="11" fill="#fde68a" stroke="#a16207"/><path d="M874 ${yy+7} l8 6 l8 -6" stroke="#a16207" fill="none"/>`;
+    if(k==='cpdu') s+=`<rect x="874" y="${yy+7}" width="16" height="11" fill="#fff" stroke="#a16207"/><path d="M874 ${yy+7} l8 6 l8 -6" stroke="#a16207" fill="none"/>`;
+    if(k==='select') s+=`<path d="M877 ${yy+4} l0 15 l4 -4 l3 6 l2 -1 l-3 -6 l5 0 z" fill="#111"/>`;
+    if(k==='delete') s+=`${t(882,yy+17,'✕',{a:'middle',fs:13,fill:'#dc2626'})}`;
+  });
+  // çalışma alanı
+  s += `<rect x="0" y="100" width="864" height="330" fill="url(#grid)"/><rect x="0" y="100" width="864" height="330" fill="none" stroke="#cbd5e1"/>`;
+  s += o.ws||'';
+  // alt panel
+  s += `<rect x="0" y="430" width="900" height="130" fill="#d9dee5" stroke="#9ca3af"/>`;
+  s += `<rect x="4" y="434" width="250" height="122" fill="#e8ecf1" stroke="#b6bec9"/>`;
+  CATS.forEach((c,i)=>{ const [x,y]=catPos(i); s+=`<rect x="${x-17}" y="${y-17}" width="34" height="34" rx="4" fill="${i===cat?'#bfdbfe':'#f8fafc'}" stroke="${i===cat?'#2563eb':'#cbd5e1'}"/>`+genIcon(x,y,c[1]); });
+  subSet.forEach((c,i)=>{ const [x,y]=subPos(i); s+=`<rect x="${x-17}" y="${y-17}" width="34" height="34" rx="4" fill="${i===sub?'#bfdbfe':'#f8fafc'}" stroke="${i===sub?'#2563eb':'#cbd5e1'}"/>`+genIcon(x,y,c[1]); });
+  s += t(129,548,subSet[sub][0],{a:'middle',fs:10.5,fw:'bold'});
+  s += `<rect x="262" y="434" width="494" height="122" fill="#f8fafc" stroke="#b6bec9"/>`;
+  list.forEach((c,i)=>{ const [x,y]=listPos(i); s+=`<rect x="${x-24}" y="${y-24}" width="48" height="46" rx="4" fill="${i===sel?'#bfdbfe':'#fff'}" stroke="${i===sel?'#2563eb':'#e2e8f0'}"/>`+genIcon(x,y-3,c[1]);
+    const lab=c[0].length>11?c[0].slice(0,10)+'…':c[0]; s+=t(x,y+36,lab,{a:'middle',fs:9.5}); });
+  if(o.hint) s+=t(509,548,o.hint,{a:'middle',fs:10,fill:'#334155'});
+  // gerçek zaman / simülasyon
+  s += `<rect x="762" y="434" width="134" height="122" fill="#e8ecf1" stroke="#b6bec9"/>`;
+  s += `${t(829,456,o.sim?'00:00:12':'00:01:27',{a:'middle',fs:10})}`;
+  s += `<rect x="772" y="500" width="56" height="44" fill="${o.sim?'#fff':'#bfdbfe'}" stroke="#94a3b8"/>${t(800,526,'Realtime',{a:'middle',fs:9.5})}`;
+  s += `<rect x="832" y="500" width="58" height="44" fill="${o.sim?'#bfdbfe':'#fff'}" stroke="#94a3b8"/>${t(861,526,'Simulation',{a:'middle',fs:9.5})}`;
+  s += o.marks||'';
+  return s+'</svg>';
+}
+
+// Diyalog penceresi (cihaz penceresi). viewBox 900x560
+function dialog(title,tabs,active,body,marks=''){
+  let s = `<svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg">${DEFS}<rect width="900" height="560" fill="#cbd5e1"/>`;
+  s += `<rect x="40" y="16" width="820" height="530" fill="#f3f4f6" stroke="#64748b"/>`;
+  s += `<rect x="40" y="16" width="820" height="26" fill="#1f3b57"/>${t(54,33,title,{fill:'#fff',fs:11.5})}${t(845,34,'×',{fill:'#fff',fs:15,a:'middle'})}`;
+  let x=50; s+=`<g>`;
+  tabs.forEach((tb,i)=>{ const w=tb.length*7.2+24; s+=`<rect x="${x}" y="50" width="${w}" height="24" fill="${i===active?'#fff':'#e5e7eb'}" stroke="#94a3b8"/>${t(x+w/2,66,tb,{a:'middle',fs:11,fw:i===active?'bold':'normal'})}`; tabPos[tb]=[x+w/2,62,w]; x+=w+2; });
+  s+=`</g><rect x="50" y="74" width="800" height="440" fill="#fff" stroke="#94a3b8"/>`;
+  s += body;
+  s += `<rect x="50" y="518" width="16" height="16" fill="#fff" stroke="#64748b"/>${t(72,531,'Top',{fs:11})}`;
+  return s + marks + '</svg>';
+}
+const tabPos = {};
+function field(x,y,label,val,w=230){ return t(x,y+15,label,{fs:11.5})+`<rect x="${x+150}" y="${y}" width="${w}" height="22" fill="#fff" stroke="#94a3b8"/>`+t(x+156,y+15,val,{fs:11.5,ff:'DejaVu Sans Mono, monospace'}); }
+
+// ===================== Şekiller =====================
+function topoWS(o={}){
+  const R=[432,150], S1=[240,255], S2=[624,255], P=[[150,360],[330,360],[534,360],[714,360]];
+  const names = o.names||{r:'R1',s1:'SW1',s2:'SW2',p:['PC1','PC2','PC3','PC4']};
+  let s='';
+  const cab=(a,b)=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#111" stroke-width="2"/>`;
+  const dot=(a,b,f,col)=>{const x=a[0]+(b[0]-a[0])*f, y=a[1]+(b[1]-a[1])*f; return `<path d="M${x-5} ${y+4} L${x+5} ${y+4} L${x} ${y-5} Z" fill="${col}"/>`;};
+  if(o.cables){
+    const rc=o.routerRed?'#dc2626':'#16a34a';
+    [[R,S1],[R,S2]].forEach(([a,b])=>{ s+=cab(a,b)+dot(a,b,.18,rc)+dot(a,b,.82,o.routerRed?'#ea580c':'#16a34a'); });
+    [[S1,P[0]],[S1,P[1]],[S2,P[2]],[S2,P[3]]].forEach(([a,b])=>{ s+=cab(a,b)+dot(a,b,.2,'#16a34a')+dot(a,b,.8,'#16a34a'); });
+    if(o.ports){
+      s+=t(352,180,'Gi0/0',{fs:9.5,fill:'#1d4ed8'})+t(482,180,'Gi0/1',{fs:9.5,fill:'#1d4ed8'})+t(268,232,'Gi0/1',{fs:9.5,fill:'#1d4ed8'})+t(570,232,'Gi0/1',{fs:9.5,fill:'#1d4ed8'});
+      s+=t(160,300,'Fa0/1',{fs:9.5,fill:'#1d4ed8'})+t(290,300,'Fa0/2',{fs:9.5,fill:'#1d4ed8'})+t(540,300,'Fa0/1',{fs:9.5,fill:'#1d4ed8'})+t(680,300,'Fa0/2',{fs:9.5,fill:'#1d4ed8'});
+    }
+  }
+  if(o.r!==false) s+=router(R[0],R[1],1,names.r);
+  if(o.sw!==false){ s+=sw(S1[0],S1[1],1,names.s1)+sw(S2[0],S2[1],1,names.s2); }
+  if(o.pcs!==false) P.forEach((p,i)=>{ s+=pc(p[0],p[1],1,names.p[i]); });
+  if(o.lans){
+    s+=`<rect x="100" y="215" width="290" height="200" rx="12" fill="none" stroke="#2563eb" stroke-dasharray="6 4"/>${t(110,408,'Lab-1: 192.168.10.0/26',{fs:11,fill:'#1d4ed8',fw:'bold'})}`;
+    s+=`<rect x="484" y="215" width="290" height="200" rx="12" fill="none" stroke="#059669" stroke-dasharray="6 4"/>${t(494,408,'Lab-2: 192.168.10.64/26',{fs:11,fill:'#047857',fw:'bold'})}`;
+  }
+  return s;
+}
+
+function fill(id,svg){ document.getElementById(id).innerHTML = svg; }
+
+// Planlanan topoloji
+(function(){
+  let s=`<svg viewBox="0 0 864 330" xmlns="http://www.w3.org/2000/svg">${DEFS}<rect width="864" height="330" fill="#fff"/>`;
+  s+=`<g transform="translate(0,-100)">${topoWS({cables:true,ports:true,lans:true})}</g>`;
+  s+=t(432,22,'R1 – Cisco 2911',{a:'middle',fs:11,fill:'#475569'});
+  s+=t(540,62,'G0/0: 192.168.10.1   |   G0/1: 192.168.10.65',{fs:10.5,fill:'#475569'});
+  s+=t(185,262,'.10',{a:'start',fs:10.5,fill:'#1d4ed8'})+t(365,262,'.11',{a:'start',fs:10.5,fill:'#1d4ed8'})+t(569,262,'.70',{a:'start',fs:10.5,fill:'#047857'})+t(749,262,'.71',{a:'start',fs:10.5,fill:'#047857'});
+  s+='</svg>';
+  fill('fig-topo-plan', s);
+})();
+
+// Şekil 1
+fill('fig1', mainWin({cat:0,sub:0,list:'routers',
+  marks: mark(432,265,150,'A',{rx:420,ry:150}) + mark(129,480,48,'B',{rx:125,ry:44}) + mark(509,480,48,'C',{rx:245,ry:46}) + mark(831,522,30,'D',{rx:64,ry:30})
+}));
+// Şekil 2
+fill('fig2', mainWin({cat:0,sub:0,list:'routers',sel:4,hint:'2911',
+  ws: router(432,150,1,'Router0'),
+  marks: mark(...catPos(0),22,'1') + mark(...subPos(0),22,'2') + mark(...listPos(4),30,'3') + arrow(...[listPos(4)[0],listPos(4)[1]-30],432,180) + mark(432,158,40,'4')
+}));
+// Şekil 3
+fill('fig3', mainWin({cat:0,sub:1,list:'switches',sel:0,hint:'2960 IOS15',
+  ws: router(432,150,1,'Router0') + sw(240,255,1,'Switch0') + sw(624,255,1,'Switch1'),
+  marks: mark(...subPos(1),22,'1') + mark(...listPos(0),30,'2') + mark(240,262,40,'3') + mark(624,262,40,'4')
+}));
+// Şekil 4
+fill('fig4', mainWin({cat:1,subSet:'end',sub:0,list:'end',sel:0,hint:'PC-PT',
+  ws: router(432,150,1,'Router0') + sw(240,255,1,'Switch0') + sw(624,255,1,'Switch1') + pc(150,360,1,'PC0')+pc(330,360,1,'PC1')+pc(534,360,1,'PC2')+pc(714,360,1,'PC3'),
+  marks: mark(...catPos(1),22,'1') + mark(...subPos(0),22,'2') + mark(...listPos(0),30,'3') + mark(432,372,40,'4',{rx:330,ry:40})
+}));
+// Şekil 5
+fill('fig5', mainWin({cat:0,sub:0,list:'routers',
+  ws: router(432,150,1.4,'') + `<rect x="398" y="181" width="70" height="20" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>`+t(404,196,'R1|',{fs:13}) + sw(240,255,1,'Switch0') + sw(624,255,1,'Switch1') + pc(150,360,1,'PC0')+pc(330,360,1,'PC1')+pc(534,360,1,'PC2')+pc(714,360,1,'PC3')
+       + `<rect x="520" y="130" width="230" height="44" rx="6" fill="#fff7ed" stroke="#f59e0b"/>`+t(530,148,'İsmin üstüne tıkla → yaz → Enter',{fs:11})+t(530,165,'Router0  →  R1',{fs:11,fw:'bold'}),
+  marks: mark(433,191,42,'1',{rx:46,ry:18}) + arrow(515,152,475,186)
+}));
+// Şekil 6
+(function(){
+  const popX=470, popY=120;
+  const pop = `<rect x="${popX}" y="${popY}" width="190" height="96" fill="#fff" stroke="#475569"/>` +
+    ['Console','GigabitEthernet0/0','GigabitEthernet0/1','GigabitEthernet0/2'].map((p,i)=>`<rect x="${popX+1}" y="${popY+1+i*23.5}" width="188" height="23" fill="${i===1?'#bfdbfe':'#fff'}"/>`+t(popX+10,popY+17+i*23.5,p,{fs:11})).join('');
+  fill('fig6', mainWin({cat:3,subSet:'con',sub:0,list:'con',sel:2,hint:'Copper Straight-Through',
+    ws: topoWS({cables:false}) + `<path d="M420 140 l0 18 l5 -5 l4 8 l3 -1 l-4 -8 l7 0 z" fill="#111"/>` + pop,
+    marks: mark(...catPos(3),22,'1') + mark(...listPos(2),30,'2') + mark(432,152,36,'3') + mark(popX+95,popY+36,14,'4',{rx:100,ry:15}) + mark(240,258,36,'5')
+  }));
+})();
+// Şekil 7
+fill('fig7', mainWin({cat:3,subSet:'con',sub:0,list:'con',sel:2,
+  ws: topoWS({cables:true,ports:true,routerRed:true}),
+  marks: mark(380,168,20,'!') + mark(486,168,20,'!')
+}));
+// Şekil 8 – Router Config
+(function(){
+  const tabs=['Physical','Config','CLI','Attributes'];
+  let b='';
+  b+=`<rect x="58" y="84" width="170" height="420" fill="#f8fafc" stroke="#cbd5e1"/>`;
+  const items=[['GLOBAL',1],['Settings',0],['Algorithm Settings',0],['ROUTING',1],['Static',0],['RIP',0],['SWITCHING',1],['VLAN Database',0],['INTERFACE',1],['GigabitEthernet0/0',0,true],['GigabitEthernet0/1',0],['GigabitEthernet0/2',0]];
+  items.forEach((it,i)=>{ const y=104+i*26; if(it[2]) b+=`<rect x="60" y="${y-15}" width="166" height="22" fill="#bfdbfe"/>`; b+=t(it[1]?70:86,y,it[0],{fs:11,fw:it[1]?'bold':'normal',fill:it[1]?'#334155':'#111'}); });
+  const X=245;
+  b+=t(540,104,'GigabitEthernet0/0',{a:'middle',fs:13,fw:'bold'});
+  b+=t(X,140,'Port Status',{fs:11.5})+`<rect x="${X+150}" y="127" width="16" height="16" fill="#fff" stroke="#334155"/>`+`<path d="M${X+153} 135 l4 4 l7 -9" stroke="#16a34a" stroke-width="2.5" fill="none"/>`+t(X+172,140,'On',{fs:11.5});
+  b+=t(X,172,'Bandwidth',{fs:11.5})+`<rect x="${X+150}" y="159" width="16" height="16" fill="#fff" stroke="#334155"/>`+`<path d="M${X+153} 167 l4 4 l7 -9" stroke="#334155" stroke-width="2" fill="none"/>`+t(X+172,172,'Auto',{fs:11.5});
+  b+=t(X,204,'Duplex',{fs:11.5})+`<rect x="${X+150}" y="191" width="16" height="16" fill="#fff" stroke="#334155"/>`+`<path d="M${X+153} 199 l4 4 l7 -9" stroke="#334155" stroke-width="2" fill="none"/>`+t(X+172,204,'Auto',{fs:11.5});
+  b+=field(X,220,'MAC Address','0001.C7A2.3B01',260);
+  b+=t(X,272,'IP Configuration',{fs:11.5,fw:'bold'});
+  b+=field(X,284,'IPv4 Address','192.168.10.1',260);
+  b+=field(X,318,'Subnet Mask','255.255.255.192',260);
+  b+=t(X,370,'Tx Ring Limit',{fs:11.5})+`<rect x="${X+150}" y="356" width="60" height="22" fill="#fff" stroke="#94a3b8"/>`+t(X+158,371,'10',{fs:11.5});
+  b+=t(X,410,'Equivalent IOS Commands',{fs:11,fw:'bold'})+`<rect x="${X}" y="416" width="595" height="86" fill="#0b1220"/>`;
+  ['R1(config)#interface GigabitEthernet0/0','R1(config-if)#no shutdown','R1(config-if)#ip address 192.168.10.1 255.255.255.192'].forEach((l,i)=>{ b+=t(X+8,436+i*18,l,{fs:10.5,fill:'#d1fae5',ff:'DejaVu Sans Mono, monospace'}); });
+  const svg=dialog('R1',tabs,1,b,'');
+  // işaretler: tab konumu bilindikten sonra
+  const tp=tabPos['Config'];
+  fill('fig8', svg.replace('</svg>', mark(tp[0],tp[1],18,'1',{rx:36,ry:16}) + mark(142,338,14,'2',{rx:86,ry:15}) + mark(X+168,135,16,'3',{rx:34,ry:16}) + mark(X+280,295,16,'4',{rx:140,ry:17}) + mark(X+280,329,16,'5',{rx:140,ry:17}) + '</svg>'));
+})();
+// Şekil 9 – CLI
+(function(){
+  const tabs=['Physical','Config','CLI','Attributes'];
+  let b=t(450,96,'IOS Command Line Interface',{a:'middle',fs:12,fw:'bold'})+`<rect x="60" y="106" width="780" height="360" fill="#000"/>`;
+  const lines=['--- System Configuration Dialog ---','Would you like to enter the initial configuration dialog? [yes/no]: no','','Press RETURN to get started!','','Router>enable','Router#configure terminal','Router(config)#hostname R1','R1(config)#interface gigabitEthernet 0/0','R1(config-if)#ip address 192.168.10.1 255.255.255.192','R1(config-if)#no shutdown','%LINK-5-CHANGED: Interface GigabitEthernet0/0, changed state to up','R1(config-if)#exit','R1(config)#interface gigabitEthernet 0/1','R1(config-if)#ip address 192.168.10.65 255.255.255.192','R1(config-if)#no shutdown','R1(config-if)#end','R1#write memory'];
+  lines.forEach((l,i)=>{ b+=t(70,124+i*19.2,l,{fs:10.5,fill:'#e5e7eb',ff:'DejaVu Sans Mono, monospace'}); });
+  b+=`<rect x="700" y="476" width="64" height="26" fill="#e5e7eb" stroke="#94a3b8"/>${t(732,493,'Copy',{a:'middle',fs:11})}<rect x="772" y="476" width="64" height="26" fill="#e5e7eb" stroke="#94a3b8"/>${t(804,493,'Paste',{a:'middle',fs:11})}`;
+  const svg=dialog('R1',tabs,2,b);
+  const tp=tabPos['CLI'];
+  fill('fig9', svg.replace('</svg>', mark(tp[0],tp[1],18,'1',{rx:28,ry:16}) + mark(560,143,14,'2',{rx:24,ry:13}) + '</svg>'));
+})();
+// Şekil 10 – PC Desktop
+(function(){
+  const tabs=['Physical','Config','Desktop','Programming','Attributes'];
+  const apps=['IP Configuration','Dial-up','Terminal','Command Prompt','Web Browser','PC Wireless','VPN','Traffic Generator','MIB Browser','Cisco IP Communicator','Email','PPPoE Dialer','Text Editor','Firewall','IPv6 Firewall','Bluetooth'];
+  let b='';
+  apps.forEach((a,i)=>{ const cx=130+(i%6)*125, cy=130+Math.floor(i/6)*120;
+    b+=`<rect x="${cx-28}" y="${cy-28}" width="56" height="56" rx="8" fill="${i===0?'#dbeafe':'#f1f5f9'}" stroke="#94a3b8"/>`;
+    if(i===0) b+=t(cx,cy+6,'IP',{a:'middle',fs:18,fw:'bold',fill:'#1d4ed8'});
+    else if(i===3) b+=`<rect x="${cx-18}" y="${cy-14}" width="36" height="28" fill="#000"/>`+t(cx-13,cy+4,'C:\\>',{fs:9,fill:'#fff',ff:'DejaVu Sans Mono'});
+    else b+=`<circle cx="${cx}" cy="${cy}" r="14" fill="#cbd5e1"/>`;
+    b+=t(cx,cy+46,a.length>18?a.slice(0,17)+'…':a,{a:'middle',fs:10.5});
+  });
+  const svg=dialog('PC1',tabs,2,b);
+  const tp=tabPos['Desktop'];
+  fill('fig10', svg.replace('</svg>', mark(tp[0],tp[1],18,'1',{rx:40,ry:16}) + mark(130,142,44,'2',{rx:62,ry:48}) + '</svg>'));
+})();
+// Şekil 11 – IP Configuration
+(function(){
+  const tabs=['Physical','Config','Desktop','Programming','Attributes'];
+  let b=`<rect x="80" y="86" width="740" height="410" fill="#fff" stroke="#64748b"/><rect x="80" y="86" width="740" height="24" fill="#e2e8f0"/>`+t(92,103,'IP Configuration',{fs:11.5,fw:'bold'})+t(808,103,'X',{fs:11.5,a:'middle'});
+  b+=t(100,138,'Interface',{fs:11.5})+`<rect x="250" y="124" width="200" height="22" fill="#fff" stroke="#94a3b8"/>`+t(258,139,'FastEthernet0  ▾',{fs:11.5});
+  b+=`<rect x="96" y="160" width="708" height="190" fill="none" stroke="#cbd5e1"/>`+t(104,176,'IP Configuration',{fs:11,fw:'bold'});
+  b+=`<circle cx="114" cy="196" r="7" fill="#fff" stroke="#334155"/>`+t(128,200,'DHCP',{fs:11.5});
+  b+=`<circle cx="214" cy="196" r="7" fill="#fff" stroke="#334155"/><circle cx="214" cy="196" r="3.5" fill="#111"/>`+t(228,200,'Static',{fs:11.5});
+  b+=field(104,214,'IPv4 Address','192.168.10.10',300);
+  b+=field(104,246,'Subnet Mask','255.255.255.192',300);
+  b+=field(104,278,'Default Gateway','192.168.10.1',300);
+  b+=field(104,310,'DNS Server','0.0.0.0',300);
+  b+=`<rect x="96" y="362" width="708" height="120" fill="none" stroke="#cbd5e1"/>`+t(104,378,'IPv6 Configuration',{fs:11,fw:'bold',fill:'#64748b'});
+  b+=field(104,420,'IPv6 Address','',300).replace(/#94a3b8/,'#cbd5e1');
+  const svg=dialog('PC1',tabs,2,b);
+  fill('fig11', svg.replace('</svg>', mark(240,196,14,'3',{rx:40,ry:15}) + mark(404,225,13,'4',{rx:166,ry:13}) + mark(404,257,13,'5',{rx:166,ry:13}) + mark(404,289,13,'6',{rx:166,ry:13}) + '</svg>'));
+})();
+// Şekil 12 – Command prompt
+(function(){
+  const tabs=['Physical','Config','Desktop','Programming','Attributes'];
+  let b=`<rect x="70" y="84" width="760" height="420" fill="#000" stroke="#64748b"/><rect x="70" y="84" width="760" height="22" fill="#e2e8f0"/>`+t(82,100,'Command Prompt',{fs:11.5,fw:'bold'});
+  const L=['Cisco Packet Tracer PC Command Line 1.0','C:\\>ping 192.168.10.1','','Pinging 192.168.10.1 with 32 bytes of data:','Reply from 192.168.10.1: bytes=32 time<1ms TTL=255','Reply from 192.168.10.1: bytes=32 time<1ms TTL=255','Reply from 192.168.10.1: bytes=32 time<1ms TTL=255','Reply from 192.168.10.1: bytes=32 time<1ms TTL=255','','C:\\>ping 192.168.10.70','','Pinging 192.168.10.70 with 32 bytes of data:','Request timed out.','Reply from 192.168.10.70: bytes=32 time<1ms TTL=127','Reply from 192.168.10.70: bytes=32 time<1ms TTL=127','Reply from 192.168.10.70: bytes=32 time<1ms TTL=127','','Ping statistics for 192.168.10.70:','    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),','C:\\>'];
+  L.forEach((l,i)=>{ b+=t(82,126+i*18.6,l,{fs:10.5,fill:'#f1f5f9',ff:'DejaVu Sans Mono, monospace'}); });
+  const svg=dialog('PC1',tabs,2,b);
+  fill('fig12', svg.replace('</svg>', mark(118,95,10,'1',{rx:58,ry:13}) + mark(182,145,12,'2',{rx:105,ry:12}) + mark(185,294,12,'3',{rx:108,ry:12}) + '</svg>'));
+})();
+// Şekil 13 – Simulation
+(function(){
+  let ws = topoWS({cables:true});
+  ws += `<rect x="248" y="296" width="18" height="12" fill="#fde68a" stroke="#a16207"/><path d="M248 296 l9 6 l9 -6" stroke="#a16207" fill="none"/>`;
+  ws += `<rect x="600" y="108" width="250" height="110" fill="#fff" stroke="#64748b"/><rect x="600" y="108" width="250" height="20" fill="#e2e8f0"/>`+t(610,122,'Simulation Panel',{fs:10.5,fw:'bold'});
+  ws += t(610,145,'Event List',{fs:10})+`<rect x="610" y="150" width="230" height="28" fill="#f8fafc" stroke="#cbd5e1"/>`+t(616,168,'0.000  PC1 → SW1  ICMP',{fs:9.5,ff:'DejaVu Sans Mono'});
+  ws += `<rect x="630" y="186" width="34" height="24" fill="#e2e8f0" stroke="#94a3b8"/>${t(647,203,'◀|',{a:'middle',fs:10})}<rect x="672" y="186" width="34" height="24" fill="#bbf7d0" stroke="#16a34a"/>${t(689,203,'▶',{a:'middle',fs:12})}<rect x="714" y="186" width="34" height="24" fill="#e2e8f0" stroke="#94a3b8"/>${t(731,203,'|▶',{a:'middle',fs:10})}`;
+  fill('fig13', mainWin({cat:3,subSet:'con',sub:0,list:'con',sim:true,ws,
+    marks: mark(861,522,26,'1',{rx:34,ry:26}) + mark(882,340,16,'2') + mark(150,362,30,'3') + mark(714,362,30,'4') + mark(689,198,18,'5')
+  }));
+})();
+</script>
+</body>
+</html>
