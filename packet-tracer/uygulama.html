@@ -17,7 +17,7 @@
   .box { border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
   .warn { border-left: 5px solid #f59e0b; background: #fffbeb; }
   .tip { border-left: 5px solid #10b981; background: #ecfdf5; }
-  table { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 10pt; }
+  table { break-inside: avoid; border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 10pt; }
   th, td { border: 1px solid #94a3b8; padding: 5px 7px; text-align: left; }
   th { background: #0f3d63; color: #fff; }
   td.blank { height: 24px; }
@@ -55,7 +55,7 @@
 <p>Bu uygulamada <b>192.168.10.0/24</b> ağını 4 alt ağa böleceksin, iki alt ağı iki ayrı laboratuvara (LAN) vereceksin,
 cihazları Packet Tracer'da kurup IP adreslerini girecek ve <b>ping</b> ile bağlantıyı test edeceksin.</p>
 <ul>
-  <li>Alt ağ maskesini, ağ adresini, yayın (broadcast) adresini ve kullanılabilir IP aralığını hesaplar.</li>
+  <li>Alt ağ maskesini, ağ adresini, yayın (broadcast) adresini ve kullanılabilir IP aralığını tanır.</li>
   <li>Packet Tracer'da router, switch ve PC ekler; doğru kabloyla bağlar.</li>
   <li>Router arayüzlerine ve PC'lere statik IP, maske ve varsayılan ağ geçidi verir.</li>
   <li>Farklı alt ağlardaki cihazlar arasında bağlantıyı test eder ve hataları bulur.</li>
@@ -71,17 +71,15 @@ kalan iki alt ağ yedekte kalacak. İki lab bir router üzerinden birbiriyle hab
 <h3>Topoloji</h3>
 <figure id="fig-topo-plan"></figure>
 
-<h2>3. Ön Hesaplama (kağıt üzerinde – Packet Tracer'a geçmeden önce)</h2>
-<p><b>Soru 1.</b> 4 alt ağ için ana bilgisayar (host) kısmından kaç bit ödünç almalısın? (2<sup>n</sup> ≥ 4) &nbsp; n = ______</p>
-<p><b>Soru 2.</b> Yeni önek (prefix) ve alt ağ maskesi nedir? &nbsp; /_____ &nbsp;&nbsp; Maske: _____._____._____._____</p>
-<p><b>Soru 3.</b> Her alt ağda toplam kaç adres, kaç kullanılabilir host var? &nbsp; Toplam: ______ &nbsp; Kullanılabilir: ______</p>
-<p><b>Soru 4.</b> Alt ağ tablosunu doldur:</p>
+<h2>3. Alt Ağ Planı</h2>
+<p>192.168.10.0/24 ağını 4 alt ağa bölmek için host kısmından <b>2 bit</b> ödünç alınır (2² = 4).
+Yeni önek <b>/26</b>, alt ağ maskesi <b>255.255.255.192</b> olur. Her alt ağda <b>64 adres</b> ve <b>62 kullanılabilir host</b> (2⁶ − 2) vardır.</p>
 <table>
   <tr><th>Alt Ağ</th><th>Ağ Adresi</th><th>İlk Kullanılabilir IP</th><th>Son Kullanılabilir IP</th><th>Yayın (Broadcast)</th><th>Kullanım</th></tr>
-  <tr><td>1</td><td class="blank"></td><td></td><td></td><td></td><td>Lab-1</td></tr>
-  <tr><td>2</td><td class="blank"></td><td></td><td></td><td></td><td>Lab-2</td></tr>
-  <tr><td>3</td><td class="blank"></td><td></td><td></td><td></td><td>Yedek</td></tr>
-  <tr><td>4</td><td class="blank"></td><td></td><td></td><td></td><td>Yedek</td></tr>
+  <tr><td>1</td><td>192.168.10.0</td><td>192.168.10.1</td><td>192.168.10.62</td><td>192.168.10.63</td><td>Lab-1</td></tr>
+  <tr><td>2</td><td>192.168.10.64</td><td>192.168.10.65</td><td>192.168.10.126</td><td>192.168.10.127</td><td>Lab-2</td></tr>
+  <tr><td>3</td><td>192.168.10.128</td><td>192.168.10.129</td><td>192.168.10.190</td><td>192.168.10.191</td><td>Yedek</td></tr>
+  <tr><td>4</td><td>192.168.10.192</td><td>192.168.10.193</td><td>192.168.10.254</td><td>192.168.10.255</td><td>Yedek</td></tr>
 </table>
 
 <h3>Adresleme Tablosu (uygulamada bunu kullanacaksın)</h3>
@@ -294,6 +292,14 @@ R1# write memory</pre>
   <figcaption>Şekil 12 – PC1 Komut İstemi'nde ping testi</figcaption>
   <div class="box tip">İlk ping'de 1 paketin <b>"Request timed out"</b> vermesi normaldir (ARP çözümlemesi). Komutu tekrar çalıştır; 4/4 cevap gelmeli.
   <code>ipconfig</code> komutuyla PC'nin IP ayarlarını da kontrol edebilirsin.</div>
+  <div class="box warn"><b>Ping çalışmıyorsa kontrol et:</b>
+  <ul class="check" style="margin:4px 0 0;padding-left:4px">
+    <li>Router portlarında <b>Port Status: On</b> işaretli mi? (CLI'da <code>no shutdown</code>)</li>
+    <li>Maske her yerde <b>255.255.255.192</b> mi?</li>
+    <li>PC'nin ağ geçidi kendi LAN'ındaki router arayüzü mü? (Lab-1 → .1, Lab-2 → .65)</li>
+    <li>PC'nin IP'si doğru aralıkta mı? (Lab-1: .1–.62, Lab-2: .65–.126)</li>
+    <li>Kablo ışıkları yeşil mi? R1'de <code>show ip interface brief</code> her iki port için <b>up / up</b> mu?</li>
+  </ul></div>
 </div>
 
 <div class="step">
@@ -310,69 +316,8 @@ R1# write memory</pre>
 
 <div class="step">
   <div class="step-h"><span class="num">13</span>Kaydet</div>
-  <p><b>File › Save As</b> ile dosyayı <code>AdSoyad_AltAg.pkt</code> adıyla kaydet ve öğretmenine teslim et.</p>
+  <p><b>File › Save As</b> ile dosyayı <code>AdSoyad_AltAg.pkt</code> adıyla kaydet.</p>
 </div>
-
-<!-- ======================= DEĞERLENDİRME ======================= -->
-<h2 class="pb">5. Test Sonuçları ve Sorular</h2>
-<table>
-  <tr><th>Kaynak</th><th>Hedef</th><th>Hedef IP</th><th>Sonuç (Başarılı / Başarısız)</th></tr>
-  <tr><td>PC1</td><td>PC2</td><td>192.168.10.11</td><td class="blank"></td></tr>
-  <tr><td>PC1</td><td>R1 G0/0</td><td>192.168.10.1</td><td class="blank"></td></tr>
-  <tr><td>PC1</td><td>PC3</td><td>192.168.10.70</td><td class="blank"></td></tr>
-  <tr><td>PC2</td><td>PC4</td><td>192.168.10.71</td><td class="blank"></td></tr>
-  <tr><td>PC4</td><td>R1 G0/0</td><td>192.168.10.1</td><td class="blank"></td></tr>
-</table>
-
-<p><b>Soru 5.</b> PC3'ün varsayılan ağ geçidini silersen PC3 → PC4 ve PC3 → PC1 ping'leri ne olur? Neden?</p>
-<p>__________________________________________________________________________________________</p>
-<p><b>Soru 6.</b> PC1'in maskesini yanlışlıkla 255.255.255.0 yaparsan PC1 → PC3 ping'i başarılı olur mu? Neden?</p>
-<p>__________________________________________________________________________________________</p>
-<p><b>Soru 7.</b> Lab-3 açılırsa hangi alt ağı kullanır? Router'ın G0/2 arayüzüne hangi IP'yi verirsin?</p>
-<p>__________________________________________________________________________________________</p>
-
-<h3>Sorun Giderme Kontrol Listesi</h3>
-<ul class="check">
-  <li>Router portlarında <b>Port Status: On</b> işaretli mi? (CLI'da <code>no shutdown</code>)</li>
-  <li>Maske her yerde <b>255.255.255.192</b> mi?</li>
-  <li>PC'nin ağ geçidi, kendi LAN'ındaki router arayüzü mü? (Lab-1 → .1, Lab-2 → .65)</li>
-  <li>PC'nin IP'si doğru alt ağın aralığında mı? (Lab-1: .1–.62, Lab-2: .65–.126)</li>
-  <li>Kablo ışıkları yeşil mi?</li>
-  <li>R1'de <code>show ip interface brief</code> komutu her iki port için <b>up / up</b> gösteriyor mu?</li>
-</ul>
-
-<h3>Değerlendirme</h3>
-<table>
-  <tr><th>Ölçüt</th><th>Puan</th><th>Alınan</th></tr>
-  <tr><td>Alt ağ hesaplamaları (Soru 1–4)</td><td>25</td><td></td></tr>
-  <tr><td>Topoloji kurulumu ve kablolama</td><td>20</td><td></td></tr>
-  <tr><td>Router yapılandırması</td><td>20</td><td></td></tr>
-  <tr><td>PC yapılandırması</td><td>15</td><td></td></tr>
-  <tr><td>Ping testleri</td><td>10</td><td></td></tr>
-  <tr><td>Sorular (5–7)</td><td>10</td><td></td></tr>
-  <tr><th>Toplam</th><th>100</th><th></th></tr>
-</table>
-
-<!-- ======================= CEVAP ANAHTARI ======================= -->
-<h2 class="pb">6. Öğretmen İçin Cevap Anahtarı</h2>
-<p><b>Soru 1:</b> <span class="key">n = 2</span> (2² = 4 alt ağ)</p>
-<p><b>Soru 2:</b> <span class="key">/26 – 255.255.255.192</span> (son oktet 11000000 = 192)</p>
-<p><b>Soru 3:</b> <span class="key">Toplam 64 adres, 62 kullanılabilir host</span> (2⁶ − 2)</p>
-<p><b>Soru 4:</b></p>
-<table>
-  <tr><th>Alt Ağ</th><th>Ağ Adresi</th><th>İlk IP</th><th>Son IP</th><th>Yayın</th><th>Kullanım</th></tr>
-  <tr><td>1</td><td>192.168.10.0</td><td>192.168.10.1</td><td>192.168.10.62</td><td>192.168.10.63</td><td>Lab-1</td></tr>
-  <tr><td>2</td><td>192.168.10.64</td><td>192.168.10.65</td><td>192.168.10.126</td><td>192.168.10.127</td><td>Lab-2</td></tr>
-  <tr><td>3</td><td>192.168.10.128</td><td>192.168.10.129</td><td>192.168.10.190</td><td>192.168.10.191</td><td>Yedek</td></tr>
-  <tr><td>4</td><td>192.168.10.192</td><td>192.168.10.193</td><td>192.168.10.254</td><td>192.168.10.255</td><td>Yedek</td></tr>
-</table>
-<p><b>Ping testleri:</b> Tümü <span class="key">başarılı</span> olmalı (ilk denemede bir zaman aşımı normal).</p>
-<p><b>Soru 5:</b> <span class="key">PC3 → PC4 başarılı</span> (aynı alt ağ, router gerekmez); <span class="key">PC3 → PC1 başarısız</span> (başka alt ağa giden paketin ağ geçidi yok).</p>
-<p><b>Soru 6:</b> <span class="key">Başarısız.</span> PC1, /24 maskeyle 192.168.10.70'i kendi ağında sanır; paketi ağ geçidine göndermez, ARP ile doğrudan arar ve cevap alamaz.</p>
-<p><b>Soru 7:</b> <span class="key">3. alt ağ: 192.168.10.128/26; G0/2 = 192.168.10.129, maske 255.255.255.192</span>.</p>
-
-<h3>Ek Görev (hızlı bitirenler için)</h3>
-<p>Lab-3'ü ekle: R1'e üçüncü switch'i (SW3) G0/2'den bağla, iki PC ekle ve 192.168.10.128/26 alt ağından adres ver (ağ geçidi 192.168.10.129). Tüm lablar arası ping'i doğrula.</p>
 
 <p style="font-size:8.5pt;color:#64748b;margin-top:20px">Not: Şekiller, Packet Tracer 8.x arayüzü esas alınarak hazırlanmış temsili çizimlerdir; sürüme göre simge yerleri küçük farklılıklar gösterebilir.</p>
 
