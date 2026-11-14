@@ -3,7 +3,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
 function t(x,y,s,o={}){return `<text x="${x}" y="${y}" font-size="${o.fs||11}" fill="${o.fill||'#111'}" font-weight="${o.fw||'normal'}" text-anchor="${o.a||'start'}" font-family="${o.ff||'Liberation Sans, Arial'}">${esc(s)}</text>`;}
 function mark(x,y,r,n,o={}){ // kırmızı yuvarlak + numara rozeti
   const rx=o.rx||r, ry=o.ry||r;
-  const bx = Math.min(x + rx*0.78 + 4, 886), by = y - ry*0.78 - 4;
+  const bx = o.side ? Math.min(x + rx + 15, 886) : Math.min(x + rx*0.78 + 4, 886), by = o.side ? y : y - ry*0.78 - 4;
   return `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="none" stroke="${RED}" stroke-width="3.5"/>
   <circle cx="${bx}" cy="${by}" r="11" fill="${RED}" stroke="#fff" stroke-width="2"/>${t(bx,by+4,n,{fs:12,fill:'#fff',fw:'bold',a:'middle'})}`;
 }

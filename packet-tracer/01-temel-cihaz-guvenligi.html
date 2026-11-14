@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Packet Tracer 1 – Temel Cihaz Güvenliği</title>
+<link rel="stylesheet" href="pt-style.css">
+</head>
+<body>
+
+<div class="cover">
+  <h1>Packet Tracer Uygulaması 1</h1>
+  <div class="sub"><b>Temel Cihaz Güvenliği</b> · Router ve switch'e isim, şifre, uyarı mesajı verme ve uzaktan erişim</div>
+  <div class="meta">
+    <div>Ad Soyad: </div><div>Sınıf / No: </div>
+    <div>Tarih: </div><div>Süre: 2 ders saati (80 dk)</div>
+  </div>
+</div>
+
+<h2>1. Amaç ve Kazanımlar</h2>
+<p>Yeni alınan bir router veya switch'e herkes şifresiz girebilir. Bu uygulamada cihazlara <b>isim</b>, <b>şifre</b> ve <b>uyarı mesajı</b> vereceksin,
+şifreleri <b>gizleyecek</b>, ayarları <b>kaydedecek</b> ve başka bir bilgisayardan <b>Telnet</b> ve <b>SSH</b> ile uzaktan bağlanacaksın.</p>
+<ul>
+  <li>Konsol kablosuyla bir PC'den router'a bağlanır.</li>
+  <li><code>hostname</code>, <code>enable secret</code>, konsol ve uzak erişim (VTY) şifrelerini yapılandırır.</li>
+  <li><code>service password-encryption</code> ile şifreleri gizler, <code>banner motd</code> ile uyarı mesajı koyar.</li>
+  <li>Ayarları <code>copy running-config startup-config</code> ile kalıcı hale getirir.</li>
+  <li>Telnet ve SSH ile uzaktan bağlanır, ikisinin farkını görür.</li>
+</ul>
+
+<h2>2. Topoloji</h2>
+<figure id="fig-plan"></figure>
+<figcaption>Topoloji – Düz çizgiler Copper Straight-Through, mavi kavisli çizgi Console kablosu</figcaption>
+
+<h3>Adresleme Tablosu</h3>
+<table>
+  <tr><th>Cihaz</th><th>Arayüz</th><th>IP Adresi</th><th>Alt Ağ Maskesi</th><th>Varsayılan Ağ Geçidi</th></tr>
+  <tr><td>R1 (2911)</td><td>GigabitEthernet0/0</td><td>192.168.1.1</td><td>255.255.255.0</td><td>—</td></tr>
+  <tr><td>SW1 (2960)</td><td>VLAN 1</td><td>192.168.1.2</td><td>255.255.255.0</td><td>192.168.1.1</td></tr>
+  <tr><td>PC1</td><td>FastEthernet0</td><td>192.168.1.10</td><td>255.255.255.0</td><td>192.168.1.1</td></tr>
+  <tr><td>PC2</td><td>FastEthernet0</td><td>192.168.1.11</td><td>255.255.255.0</td><td>192.168.1.1</td></tr>
+</table>
+
+<h3>Kullanılacak Şifreler</h3>
+<table>
+  <tr><th>Ne için?</th><th>Komut</th><th>Şifre</th></tr>
+  <tr><td>Yönetici moduna geçiş (enable)</td><td><code>enable secret</code></td><td><b>Gizli123</b></td></tr>
+  <tr><td>Konsol kablosuyla giriş</td><td><code>line console 0</code></td><td><b>Konsol123</b></td></tr>
+  <tr><td>Telnet ile uzaktan giriş</td><td><code>line vty</code></td><td><b>Uzak123</b></td></tr>
+  <tr><td>SSH kullanıcı adı / şifre (isteğe bağlı adım)</td><td><code>username</code></td><td><b>admin / Admin123</b></td></tr>
+</table>
+<div class="box warn"><b>Dikkat:</b> Cisco komutlarında şifreler <b>büyük/küçük harfe duyarlıdır</b>. <code>Gizli123</code> ile <code>gizli123</code> farklı şifrelerdir.</div>
+
+<!-- ======================= UYGULAMA ======================= -->
+<h2 class="pb">3. Uygulama – Adım Adım</h2>
+<div class="box warn"><b>Okuma rehberi:</b> Şekillerdeki <b style="color:#e11d48">kırmızı yuvarlaklar</b> tıklayacağın veya yazacağın yeri,
+içindeki <b style="color:#e11d48">numaralar</b> sırayı gösterir. Metindeki <span class="c">1</span> işaretleri şekildeki numaralarla aynıdır.</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">1</span>Cihazları ekle ve ağ kablolarını bağla</div>
+  <ol class="clicks">
+    <li><b>Network Devices › Routers</b> içinden <b>2911</b> ekle, adını <b>R1</b> yap.</li>
+    <li><b>Network Devices › Switches</b> içinden <b>2960</b> ekle, adını <b>SW1</b> yap.</li>
+    <li><b>End Devices</b> içinden iki <b>PC</b> ekle, adlarını <b>PC1</b> ve <b>PC2</b> yap.</li>
+    <li><b>Connections</b> içinden <b>Copper Straight-Through</b> kablosuyla şu bağlantıları yap:</li>
+  </ol>
+  <table>
+    <tr><th>Bir uç</th><th>Diğer uç</th></tr>
+    <tr><td>R1 – GigabitEthernet0/0</td><td>SW1 – GigabitEthernet0/1</td></tr>
+    <tr><td>SW1 – FastEthernet0/1</td><td>PC1 – FastEthernet0</td></tr>
+    <tr><td>SW1 – FastEthernet0/2</td><td>PC2 – FastEthernet0</td></tr>
+  </table>
+  <div class="box tip">Cihaz ekleme ve kablolama önceki uygulamadakiyle aynıdır. Router'a giden kablo ucu şimdilik <b>kırmızı</b> kalacak; portu Adım 5'te açacağız.</div>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">2</span>Konsol kablosunu bağla (PC1 → R1)</div>
+  <p>Konsol kablosu, router'ı ilk kez ayarlamak için kullanılan özel kablodur. Ağ üzerinden değil, doğrudan cihaza bağlanır.</p>
+  <ol class="clicks">
+    <li><span class="c">1</span> Sol alttan <b>Connections</b> (şimşek) kategorisine tıkla.</li>
+    <li><span class="c">2</span> Listeden <b>Console</b> kablosunu (açık mavi kavisli çizgi) seç.</li>
+    <li><span class="c">3</span> <b>PC1</b>'e tıkla → açılan listeden <span class="c">4</span> <b>RS 232</b>'yi seç.</li>
+  </ol>
+  <figure id="fig-con1"></figure>
+  <figcaption>Şekil 1 – Console kablosu seçimi ve PC1'in RS 232 portu</figcaption>
+</div>
+
+<div class="step">
+  <ol class="clicks" start="4">
+    <li><span class="c">5</span> Şimdi <b>R1</b>'e tıkla → açılan listeden <span class="c">6</span> <b>Console</b> portunu seç.</li>
+  </ol>
+  <figure id="fig-con2"></figure>
+  <figcaption>Şekil 2 – Kablonun diğer ucu: R1'in Console portu</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">3</span>PC'lere IP ver</div>
+  <p><b>PC › Desktop › IP Configuration › Static</b> yolunu izle ve değerleri gir:</p>
+  <table>
+    <tr><th>PC</th><th>IPv4 Address</th><th>Subnet Mask</th><th>Default Gateway</th></tr>
+    <tr><td>PC1</td><td>192.168.1.10</td><td>255.255.255.0</td><td>192.168.1.1</td></tr>
+    <tr><td>PC2</td><td>192.168.1.11</td><td>255.255.255.0</td><td>192.168.1.1</td></tr>
+  </table>
+  <figure id="fig-pcip"></figure>
+  <figcaption>Şekil 3 – PC2 › Desktop › IP Configuration</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">4</span>PC1'den Terminal ile R1'e bağlan</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> <b>PC1</b>'e tıkla, <b>Desktop</b> sekmesine geç.</li>
+    <li><span class="c">2</span> <b>Terminal</b> simgesine tıkla.</li>
+  </ol>
+  <figure id="fig-termicon"></figure>
+  <figcaption>Şekil 4 – PC1 › Desktop › Terminal</figcaption>
+</div>
+
+<div class="step">
+  <ol class="clicks" start="3">
+    <li>Ayarlar varsayılan olarak doğrudur (9600, 8, None, 1, None). Hiçbirini değiştirme.</li>
+    <li><span class="c">3</span> <b>OK</b> düğmesine tıkla.</li>
+    <li>Ekranda <i>"Would you like to enter the initial configuration dialog? [yes/no]:"</i> sorusu çıkarsa <code>no</code> yaz ve <b>Enter</b>'a bas. Sonra bir kez daha <b>Enter</b>'a bas; <code>Router&gt;</code> istemi görünür.</li>
+  </ol>
+  <figure id="fig-termcfg"></figure>
+  <figcaption>Şekil 5 – Terminal Configuration penceresi</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">5</span>R1'i yapılandır – isim ve şifreler</div>
+  <p>Terminal penceresine aşağıdaki komutları sırayla yaz. Her satırdan sonra <b>Enter</b>'a bas.</p>
+<pre>Router&gt; enable
+Router# configure terminal
+Router(config)# hostname R1
+R1(config)# no ip domain-lookup
+R1(config)# enable secret Gizli123
+R1(config)# line console 0
+R1(config-line)# password Konsol123
+R1(config-line)# login
+R1(config-line)# logging synchronous
+R1(config-line)# exit
+R1(config)# line vty 0 4
+R1(config-line)# password Uzak123
+R1(config-line)# login
+R1(config-line)# exit</pre>
+  <table>
+    <tr><th>Komut</th><th>Ne işe yarar?</th></tr>
+    <tr><td><code>hostname R1</code></td><td>Cihaza isim verir; istem <code>R1#</code> olur.</td></tr>
+    <tr><td><code>no ip domain-lookup</code></td><td>Yanlış yazılan komutu alan adı sanıp beklemesini engeller.</td></tr>
+    <tr><td><code>enable secret</code></td><td>Yönetici moduna (<code>#</code>) geçişe şifreli koruma koyar.</td></tr>
+    <tr><td><code>line console 0</code> + <code>password</code> + <code>login</code></td><td>Konsol kablosuyla girişte şifre sorar. <b><code>login</code> yazılmazsa şifre sorulmaz!</b></td></tr>
+    <tr><td><code>logging synchronous</code></td><td>Sistem mesajlarının yazdığın komutun ortasına girmesini engeller.</td></tr>
+    <tr><td><code>line vty 0 4</code></td><td>Aynı anda 5 uzak (Telnet/SSH) bağlantı için şifre koyar.</td></tr>
+  </table>
+  <figure id="fig-r1a"></figure>
+  <figcaption>Şekil 6 – PC1 Terminal: R1'e isim ve şifre verme</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">6</span>R1'i yapılandır – şifre gizleme, uyarı mesajı, IP ve kaydetme</div>
+<pre>R1(config)# service password-encryption
+R1(config)# banner motd #Yetkisiz giris yasaktir!#
+R1(config)# interface gigabitEthernet 0/0
+R1(config-if)# ip address 192.168.1.1 255.255.255.0
+R1(config-if)# no shutdown
+R1(config-if)# exit
+R1(config)# end
+R1# copy running-config startup-config
+Destination filename [startup-config]?      ← sadece Enter'a bas
+[OK]</pre>
+  <table>
+    <tr><th>Komut</th><th>Ne işe yarar?</th></tr>
+    <tr><td><code>service password-encryption</code></td><td>Yapılandırmadaki düz yazılmış şifreleri gizler (okunamaz hale getirir).</td></tr>
+    <tr><td><code>banner motd #...#</code></td><td>Cihaza bağlanan herkese gösterilecek uyarı mesajı. <code>#</code> işaretleri mesajın başını ve sonunu gösterir.</td></tr>
+    <tr><td><code>no shutdown</code></td><td>Kapalı olan portu açar. Kablo ucu yeşile döner.</td></tr>
+    <tr><td><code>copy running-config startup-config</code></td><td>Ayarları kalıcı belleğe kaydeder. <b>Kaydetmezsen cihaz kapanınca tüm ayarlar silinir!</b></td></tr>
+  </table>
+  <div class="box tip"><b>İpucu:</b> Türkçe karakter (ş, ı, ğ, ü, ö, ç) kullanma; Cisco cihazları bu karakterleri doğru göstermez.</div>
+  <figure id="fig-r1b"></figure>
+  <figcaption>Şekil 7 – PC1 Terminal: şifre gizleme, banner, IP adresi ve kaydetme</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">7</span>SW1'i yapılandır (CLI sekmesi)</div>
+  <p>Switch'e konsol kablosu bağlamadık; bu yüzden doğrudan Packet Tracer'ın <b>CLI</b> sekmesini kullanacağız.</p>
+  <ol class="clicks">
+    <li><span class="c">1</span> <b>SW1</b>'e tıkla ve <b>CLI</b> sekmesine geç. Bir kez <b>Enter</b>'a bas.</li>
+    <li><span class="c">2</span> Aşağıdaki komutları yaz. Switch'te uzak erişim satırı <code>vty 0 15</code>'tir (16 bağlantı).</li>
+    <li><span class="c">3</span> Switch'in IP adresi bir porta değil, <b>VLAN 1</b> arayüzüne verilir.</li>
+  </ol>
+<pre>Switch&gt; enable
+Switch# configure terminal
+Switch(config)# hostname SW1
+SW1(config)# no ip domain-lookup
+SW1(config)# enable secret Gizli123
+SW1(config)# line console 0
+SW1(config-line)# password Konsol123
+SW1(config-line)# login
+SW1(config-line)# exit
+SW1(config)# line vty 0 15
+SW1(config-line)# password Uzak123
+SW1(config-line)# login
+SW1(config-line)# exit
+SW1(config)# service password-encryption
+SW1(config)# banner motd #Yetkisiz giris yasaktir!#
+SW1(config)# interface vlan 1
+SW1(config-if)# ip address 192.168.1.2 255.255.255.0
+SW1(config-if)# no shutdown
+SW1(config-if)# exit
+SW1(config)# ip default-gateway 192.168.1.1
+SW1(config)# end
+SW1# copy running-config startup-config</pre>
+  <figure id="fig-sw"></figure>
+  <figcaption>Şekil 8 – SW1 › CLI sekmesi</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">8</span>Test 1 – Konsol şifresi çalışıyor mu?</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> PC1'in Terminal penceresinde <code>exit</code> yaz. Oturum kapanır; <b>Enter</b>'a bas.</li>
+    <li><span class="c">2</span> Uyarı mesajı (banner) görünmeli.</li>
+    <li><span class="c">3</span> <b>Password:</b> sorusuna <code>Konsol123</code> yaz. Yazarken ekranda hiçbir şey görünmez; bu normaldir.</li>
+    <li><span class="c">4</span> <code>enable</code> yaz, şifre olarak <code>Gizli123</code> gir. İstem <code>R1#</code> olmalı.</li>
+  </ol>
+  <figure id="fig-t1"></figure>
+  <figcaption>Şekil 9 – Konsoldan şifreyle giriş</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">9</span>Test 2 – Şifreler gizlenmiş mi?</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> <code>R1#</code> isteminde <code>show running-config</code> yaz. Liste uzunsa <b>Space</b> tuşuyla ilerle.</li>
+    <li><span class="c">2</span> <code>enable secret 5 ...</code> satırına bak: şifre <b>okunamaz</b> durumda.</li>
+    <li><span class="c">3</span> <code>password 7 ...</code> satırlarına bak: konsol ve VTY şifreleri de <b>gizlenmiş</b>.</li>
+    <li><span class="c">4</span> Uyarı mesajı da yapılandırmada görünür.</li>
+  </ol>
+  <figure id="fig-t2"></figure>
+  <figcaption>Şekil 10 – show running-config çıktısından bir bölüm</figcaption>
+  <div class="box tip"><b>Bilgi:</b> Senin ekranındaki karakterler farklı olabilir. <code>7</code> türü gizleme zayıftır ve kolayca çözülebilir; <code>enable secret</code> (tür 5) çok daha güvenlidir. Bu yüzden <code>enable password</code> yerine her zaman <code>enable secret</code> kullanılır.</div>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">10</span>Test 3 – PC2'den Telnet ile uzaktan bağlan</div>
+  <ol class="clicks">
+    <li><span class="c">1</span> <b>PC2 › Desktop › Command Prompt</b>'u aç ve <code>telnet 192.168.1.1</code> yaz.</li>
+    <li><span class="c">2</span> Uyarı mesajı görünür. <b>Password:</b> sorusuna <code>Uzak123</code> yaz.</li>
+    <li><span class="c">3</span> <code>enable</code> yaz, <code>Gizli123</code> gir. Artık PC2'den R1'i yönetebilirsin.</li>
+    <li><span class="c">4</span> Çıkmak için <code>exit</code> yaz. Aynı testi switch için <code>telnet 192.168.1.2</code> ile tekrarla.</li>
+  </ol>
+  <figure id="fig-t3"></figure>
+  <figcaption>Şekil 11 – PC2'den R1'e Telnet bağlantısı</figcaption>
+  <div class="box warn"><b>Güvenlik notu:</b> Telnet tüm bilgileri, şifreler dahil, <b>şifrelenmeden</b> gönderir. Ağı dinleyen biri şifreyi görebilir. Gerçek ağlarda Telnet yerine <b>SSH</b> kullanılır (Adım 11).</div>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">11</span>(İsteğe bağlı) Telnet yerine SSH kullan</div>
+  <p>SSH, bağlantıyı şifreler. SSH için cihazın bir <b>alan adına</b>, bir <b>şifreleme anahtarına</b> ve bir <b>kullanıcı hesabına</b> ihtiyacı vardır. PC1 Terminal'inde R1'e şu komutları gir:</p>
+<pre>R1# configure terminal
+R1(config)# ip domain-name okul.local
+R1(config)# username admin secret Admin123
+R1(config)# crypto key generate rsa
+How many bits in the modulus [512]: 1024
+R1(config)# ip ssh version 2
+R1(config)# line vty 0 4
+R1(config-line)# login local
+R1(config-line)# transport input ssh
+R1(config-line)# end
+R1# copy running-config startup-config</pre>
+  <table>
+    <tr><th>Komut</th><th>Ne işe yarar?</th></tr>
+    <tr><td><code>ip domain-name</code></td><td>Şifreleme anahtarı üretmek için gereken alan adını verir.</td></tr>
+    <tr><td><code>username admin secret</code></td><td>Kullanıcı adı ve şifreli parola oluşturur.</td></tr>
+    <tr><td><code>crypto key generate rsa</code></td><td>SSH için şifreleme anahtarı üretir. SSH sürüm 2 için en az <b>768</b>, önerilen <b>1024</b> bit.</td></tr>
+    <tr><td><code>login local</code></td><td>Girişte artık tek şifre değil, kullanıcı adı + şifre sorulur.</td></tr>
+    <tr><td><code>transport input ssh</code></td><td>Sadece SSH'ye izin verir; Telnet artık çalışmaz.</td></tr>
+  </table>
+  <ol class="clicks">
+    <li><span class="c">1</span> PC2'nin Command Prompt'unda <code>ssh -l admin 192.168.1.1</code> yaz (<code>-l</code> küçük L harfidir).</li>
+    <li><span class="c">2</span> <b>Password:</b> sorusuna <code>Admin123</code> yaz.</li>
+    <li><span class="c">3</span> Şimdi <code>telnet 192.168.1.1</code> dene: bağlantı <b>reddedilmeli</b>.</li>
+  </ol>
+  <figure id="fig-t4"></figure>
+  <figcaption>Şekil 12 – PC2'den SSH ile bağlantı; Telnet artık reddediliyor</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">12</span>Kaydet</div>
+  <p><b>File › Save As</b> ile dosyayı <code>AdSoyad_Guvenlik.pkt</code> adıyla kaydet.</p>
+  <div class="box warn"><b>Bir şey çalışmıyorsa kontrol et:</b>
+  <ul class="check" style="margin:4px 0 0;padding-left:4px">
+    <li>Şifre sorulmuyorsa: <code>line</code> altında <code>login</code> komutunu yazdın mı?</li>
+    <li>Telnet'te <i>"% Password required, but none set"</i>: <code>line vty</code> altına şifre verdin mi?</li>
+    <li>Telnet'te <code>enable</code> dediğinde <i>"% No password set"</i>: <code>enable secret</code> verdin mi?</li>
+    <li>Telnet/ping cevap vermiyorsa: R1'de <code>no shutdown</code> yaptın mı, PC'lerin IP'leri doğru mu?</li>
+    <li>Switch'e Telnet olmuyorsa: <code>interface vlan 1</code> altında IP ve <code>no shutdown</code> var mı?</li>
+    <li>Şifreler büyük/küçük harfe duyarlıdır: <code>Gizli123</code> ≠ <code>gizli123</code>.</li>
+  </ul></div>
+</div>
+
+<p style="font-size:8.5pt;color:#64748b;margin-top:20px">Not: Şekiller, Packet Tracer 8.x arayüzü esas alınarak hazırlanmış temsili çizimlerdir; sürüme göre simge yerleri ve ekran çıktıları küçük farklılıklar gösterebilir.</p>
+
+<script src="pt-common.js"></script>
+<script>
+// ---------- yardımcılar ----------
+const MONO='DejaVu Sans Mono, monospace', CW=6.33, LH=18.6;
+function popup(x,y,items,selIdx){
+  return `<rect x="${x}" y="${y}" width="190" height="${items.length*23.5+2}" fill="#fff" stroke="#475569"/>` +
+    items.map((p,i)=>`<rect x="${x+1}" y="${y+1+i*23.5}" width="188" height="23" fill="${i===selIdx?'#bfdbfe':'#fff'}"/>`+t(x+10,y+17+i*23.5,p,{fs:11})).join('');
+}
+function consoleCable(a,b){ return `<path d="M${a[0]} ${a[1]} Q ${(a[0]+b[0])/2-120} ${(a[1]+b[1])/2} ${b[0]} ${b[1]}" stroke="#38bdf8" stroke-width="2.5" fill="none"/>`; }
+const P = {R:[432,150], S:[432,255], P1:[300,360], P2:[564,360]};
+function topo(o={}){
+  let s='';
+  const cab=(a,b,c1,c2)=>{ const d=(f,col)=>{const x=a[0]+(b[0]-a[0])*f,y=a[1]+(b[1]-a[1])*f;return `<path d="M${x-5} ${y+4} L${x+5} ${y+4} L${x} ${y-5} Z" fill="${col}"/>`;}; return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#111" stroke-width="2"/>`+d(.25,c1)+d(.75,c2); };
+  if(o.cables!==false){ s+=cab(P.R,P.S,o.rRed?'#dc2626':'#16a34a',o.rRed?'#ea580c':'#16a34a')+cab(P.S,P.P1,'#16a34a','#16a34a')+cab(P.S,P.P2,'#16a34a','#16a34a'); }
+  if(o.console) s+=consoleCable([P.P1[0]-18,P.P1[1]-8],[P.R[0]-26,P.R[1]]);
+  s+=router(...P.R,1,'')+t(P.R[0]-12,P.R[1]+32,'R1',{a:'end',fs:11})+sw(...P.S,1,'SW1')+pc(...P.P1,1,'PC1')+pc(...P.P2,1,'PC2');
+  return s;
+}
+// Terminal/CLI tarzı pencere. marks: [{l:satır, n:'1', from:başlangıç sütunu, len:uzunluk}]
+function term(o){
+  const tabs=o.tabs, X=70, Y0=126;
+  let b='';
+  if(o.inner){ b+=`<rect x="64" y="82" width="772" height="426" fill="#000" stroke="#64748b"/><rect x="64" y="82" width="772" height="22" fill="#e2e8f0"/>`+t(76,98,o.inner,{fs:11.5,fw:'bold'})+t(824,98,'X',{fs:11.5,a:'middle'}); }
+  else { b+=t(450,96,'IOS Command Line Interface',{a:'middle',fs:12,fw:'bold'})+`<rect x="60" y="106" width="780" height="400" fill="#000"/>`; }
+  const y0 = o.inner?122:Y0; const lh = Math.min(LH, 372/o.lines.length);
+  o.lines.forEach((l,i)=>{ b+=t(X,y0+i*lh,l.replace(/^ +/,m=>'\u00a0'.repeat(m.length)),{fs:10.5,fill:o.dim&&o.dim.includes(i)?'#94a3b8':'#e5e7eb',ff:MONO}); });
+  let svg=dialog(o.title,tabs,tabs.indexOf(o.active),b);
+  let m='';
+  if(o.tabMark){ const tp=tabPos[o.active]; m+=mark(tp[0],tp[1],18,o.tabMark,{rx:tp[2]/2+8,ry:15}); }
+  (o.marks||[]).forEach(k=>{ const line=o.lines[k.l]; const from=k.from||0; const len=k.len||(line.length-from);
+    const cx=X+(from+len/2)*CW, rx=len*CW/2+16; m+=mark(cx,y0+k.l*lh-4,11,k.n,{rx,ry:Math.min(12,lh*0.62),side:true}); });
+  return svg.replace('</svg>', m+'</svg>');
+}
+const RT=['Physical','Config','CLI','Attributes'];
+const PT=['Physical','Config','Desktop','Programming','Attributes'];
+function desktop(name, selIdx, n2){
+  const apps=['IP Configuration','Dial-up','Terminal','Command Prompt','Web Browser','PC Wireless','VPN','Traffic Generator','MIB Browser','Cisco IP Communicator','Email','PPPoE Dialer','Text Editor','Firewall','IPv6 Firewall','Bluetooth'];
+  let b='';
+  apps.forEach((a,i)=>{ const cx=130+(i%6)*125, cy=130+Math.floor(i/6)*120;
+    b+=`<rect x="${cx-28}" y="${cy-28}" width="56" height="56" rx="8" fill="${i===selIdx?'#dbeafe':'#f1f5f9'}" stroke="#94a3b8"/>`;
+    if(i===0) b+=t(cx,cy+6,'IP',{a:'middle',fs:18,fw:'bold',fill:'#1d4ed8'});
+    else if(i===2) b+=`<rect x="${cx-18}" y="${cy-14}" width="36" height="28" rx="3" fill="#1e3a5f"/>`+t(cx,cy+5,'>_',{a:'middle',fs:13,fill:'#7dd3fc',ff:MONO});
+    else if(i===3) b+=`<rect x="${cx-18}" y="${cy-14}" width="36" height="28" fill="#000"/>`+t(cx-13,cy+4,'C:\\>',{fs:9,fill:'#fff',ff:MONO});
+    else b+=`<circle cx="${cx}" cy="${cy}" r="14" fill="#cbd5e1"/>`;
+    b+=t(cx,cy+46,a.length>18?a.slice(0,17)+'…':a,{a:'middle',fs:10.5});
+  });
+  const svg=dialog(name,PT,2,b); const tp=tabPos['Desktop'];
+  const cx=130+(selIdx%6)*125, cy=130+Math.floor(selIdx/6)*120;
+  return svg.replace('</svg>', mark(tp[0],tp[1],18,'1',{rx:40,ry:16}) + mark(cx,cy+12,44,n2,{rx:62,ry:48}) + '</svg>');
+}
+
+// ---------- Şekiller ----------
+// Topoloji planı
+(function(){
+  let s=`<svg viewBox="0 0 864 330" xmlns="http://www.w3.org/2000/svg">${DEFS}<rect width="864" height="330" fill="#fff"/>`;
+  s+=`<g transform="translate(0,-100)">${topo({console:true})}</g>`;
+  s+=t(470,40,'Gi0/0 – 192.168.1.1',{fs:10.5,fill:'#1d4ed8'})+t(470,145,'Gi0/1',{fs:10.5,fill:'#1d4ed8'})+t(470,170,'VLAN 1 – 192.168.1.2',{fs:10.5,fill:'#1d4ed8'});
+  s+=t(320,215,'Fa0/1',{fs:10,fill:'#1d4ed8'})+t(510,215,'Fa0/2',{fs:10,fill:'#1d4ed8'});
+  s+=t(300,302,'192.168.1.10',{a:'middle',fs:10.5,fill:'#1d4ed8'})+t(564,302,'192.168.1.11',{a:'middle',fs:10.5,fill:'#1d4ed8'});
+  s+=t(150,120,'Console kablosu',{fs:10.5,fill:'#0284c7',fw:'bold'})+t(150,135,'PC1 RS 232 → R1 Console',{fs:10,fill:'#0284c7'});
+  s+=t(640,250,'Ağ: 192.168.1.0/24',{fs:11.5,fw:'bold',fill:'#334155'});
+  fill('fig-plan', s+'</svg>');
+})();
+// Şekil 1
+fill('fig-con1', mainWin({cat:3,subSet:'con',sub:0,list:'con',sel:1,hint:'Console',
+  ws: topo({rRed:true}) + popup(80,290,['RS 232','FastEthernet0','USB0'],0),
+  marks: mark(...catPos(3),22,'1') + mark(...listPos(1),30,'2') + mark(300,362,32,'3') + mark(175,302,14,'4',{rx:100,ry:14})
+}));
+// Şekil 2
+fill('fig-con2', mainWin({cat:3,subSet:'con',sub:0,list:'con',sel:1,hint:'Console',
+  ws: topo({rRed:true}) + `<path d="M282 352 Q 360 260 410 165" stroke="#38bdf8" stroke-width="2.5" fill="none" stroke-dasharray="6 4"/>` + popup(505,110,['Console','AUX','GigabitEthernet0/0','GigabitEthernet0/1','GigabitEthernet0/2','USB0'],0),
+  marks: mark(432,152,34,'5') + mark(600,122,14,'6',{rx:100,ry:14})
+}));
+// Şekil 3 – PC2 IP
+(function(){
+  let b=`<rect x="80" y="86" width="740" height="410" fill="#fff" stroke="#64748b"/><rect x="80" y="86" width="740" height="24" fill="#e2e8f0"/>`+t(92,103,'IP Configuration',{fs:11.5,fw:'bold'})+t(808,103,'X',{fs:11.5,a:'middle'});
+  b+=t(100,138,'Interface',{fs:11.5})+`<rect x="250" y="124" width="200" height="22" fill="#fff" stroke="#94a3b8"/>`+t(258,139,'FastEthernet0  ▾',{fs:11.5});
+  b+=`<rect x="96" y="160" width="708" height="190" fill="none" stroke="#cbd5e1"/>`+t(104,176,'IP Configuration',{fs:11,fw:'bold'});
+  b+=`<circle cx="114" cy="196" r="7" fill="#fff" stroke="#334155"/>`+t(128,200,'DHCP',{fs:11.5});
+  b+=`<circle cx="214" cy="196" r="7" fill="#fff" stroke="#334155"/><circle cx="214" cy="196" r="3.5" fill="#111"/>`+t(228,200,'Static',{fs:11.5});
+  b+=field(104,214,'IPv4 Address','192.168.1.11',300)+field(104,246,'Subnet Mask','255.255.255.0',300)+field(104,278,'Default Gateway','192.168.1.1',300)+field(104,310,'DNS Server','0.0.0.0',300);
+  const svg=dialog('PC2',PT,2,b);
+  fill('fig-pcip', svg.replace('</svg>', mark(240,196,14,'1',{rx:40,ry:15}) + mark(404,225,13,'2',{rx:166,ry:13}) + mark(404,257,13,'3',{rx:166,ry:13}) + mark(404,289,13,'4',{rx:166,ry:13}) + '</svg>'));
+})();
+// Şekil 4
+fill('fig-termicon', desktop('PC1',2,'2'));
+// Şekil 5 – Terminal Configuration
+(function(){
+  let b=`<rect x="200" y="100" width="500" height="340" fill="#fff" stroke="#64748b"/><rect x="200" y="100" width="500" height="24" fill="#e2e8f0"/>`+t(212,117,'Terminal Configuration',{fs:11.5,fw:'bold'});
+  b+=t(220,150,'Port Configuration',{fs:11,fw:'bold'});
+  [['Bits Per Second:','9600'],['Data Bits:','8'],['Parity:','None'],['Stop Bits:','1'],['Flow Control:','None']].forEach((f,i)=>{ const y=170+i*44;
+    b+=t(240,y+15,f[0],{fs:11.5})+`<rect x="420" y="${y}" width="220" height="24" fill="#fff" stroke="#94a3b8"/>`+t(428,y+16,f[1],{fs:11.5})+t(628,y+16,'▾',{fs:11,a:'middle'}); });
+  b+=`<rect x="540" y="398" width="70" height="28" rx="3" fill="#2563eb"/>`+t(575,417,'OK',{a:'middle',fs:12,fill:'#fff',fw:'bold'});
+  const svg=dialog('PC1',PT,2,b);
+  fill('fig-termcfg', svg.replace('</svg>', mark(575,412,20,'3',{rx:46,ry:22}) + '</svg>'));
+})();
+// Şekil 6 – R1 yapılandırma A
+fill('fig-r1a', term({title:'PC1',tabs:PT,active:'Desktop',inner:'Terminal',lines:[
+ 'Would you like to enter the initial configuration dialog? [yes/no]: no','',
+ 'Press RETURN to get started!','',
+ 'Router>enable','Router#configure terminal',
+ 'Enter configuration commands, one per line.  End with CNTL/Z.',
+ 'Router(config)#hostname R1','R1(config)#no ip domain-lookup','R1(config)#enable secret Gizli123',
+ 'R1(config)#line console 0','R1(config-line)#password Konsol123','R1(config-line)#login','R1(config-line)#logging synchronous','R1(config-line)#exit',
+ 'R1(config)#line vty 0 4','R1(config-line)#password Uzak123','R1(config-line)#login','R1(config-line)#exit','R1(config)#'],
+ dim:[0,2,6],
+ marks:[{l:7,n:'1',from:15},{l:9,n:'2',from:11},{l:11,n:'3',from:16},{l:12,n:'4',from:16},{l:16,n:'5',from:16}]
+}));
+// Şekil 7 – R1 yapılandırma B
+fill('fig-r1b', term({title:'PC1',tabs:PT,active:'Desktop',inner:'Terminal',lines:[
+ 'R1(config)#service password-encryption','R1(config)#banner motd #Yetkisiz giris yasaktir!#',
+ 'R1(config)#interface gigabitEthernet 0/0','R1(config-if)#ip address 192.168.1.1 255.255.255.0','R1(config-if)#no shutdown','',
+ '%LINK-5-CHANGED: Interface GigabitEthernet0/0, changed state to up','',
+ '%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0, changed state to up','',
+ 'R1(config-if)#exit','R1(config)#end','R1#',
+ '%SYS-5-CONFIG_I: Configured from console by console','',
+ 'R1#copy running-config startup-config','Destination filename [startup-config]?','Building configuration...','[OK]','R1#'],
+ dim:[6,8,13,17],
+ marks:[{l:0,n:'1',from:11},{l:1,n:'2',from:11},{l:3,n:'3',from:14},{l:4,n:'4',from:14},{l:15,n:'5',from:3}]
+}));
+// Şekil 8 – SW1 CLI
+fill('fig-sw', term({title:'SW1',tabs:RT,active:'CLI',tabMark:'1',lines:[
+ 'Switch>enable','Switch#configure terminal','Switch(config)#hostname SW1','SW1(config)#no ip domain-lookup','SW1(config)#enable secret Gizli123',
+ 'SW1(config)#line console 0','SW1(config-line)#password Konsol123','SW1(config-line)#login','SW1(config-line)#exit',
+ 'SW1(config)#line vty 0 15','SW1(config-line)#password Uzak123','SW1(config-line)#login','SW1(config-line)#exit',
+ 'SW1(config)#service password-encryption','SW1(config)#banner motd #Yetkisiz giris yasaktir!#',
+ 'SW1(config)#interface vlan 1','SW1(config-if)#ip address 192.168.1.2 255.255.255.0','SW1(config-if)#no shutdown',
+ 'SW1(config-if)#exit','SW1(config)#ip default-gateway 192.168.1.1','SW1(config)#end','SW1#copy running-config startup-config'],
+ marks:[{l:9,n:'2',from:12},{l:15,n:'3',from:12},{l:16,n:'3',from:15}]
+}));
+// Şekil 9 – Konsol testi
+fill('fig-t1', term({title:'PC1',tabs:PT,active:'Desktop',inner:'Terminal',lines:[
+ 'R1#exit','','','','R1 con0 is now available','','','','','Press RETURN to get started.','','',
+ 'Yetkisiz giris yasaktir!','','User Access Verification','','Password:','','R1>enable','Password:','R1#'],
+ dim:[4,9],
+ marks:[{l:0,n:'1',from:3},{l:12,n:'2'},{l:16,n:'3',len:9},{l:18,n:'4',from:3},{l:20,n:'4',len:3}]
+}));
+// Şekil 10 – show running-config
+fill('fig-t2', term({title:'PC1',tabs:PT,active:'Desktop',inner:'Terminal',lines:[
+ 'R1#show running-config','Building configuration...','','Current configuration : 812 bytes','!',
+ 'service password-encryption','!','hostname R1','!',
+ 'enable secret 5 $1$mERr$EYjEPODuawxi8SuxzaeL5.','!','no ip domain-lookup','!',
+ 'banner motd ^CYetkisiz giris yasaktir!^C','!',
+ 'line con 0',' password 7 080A43401A1609464058',' logging synchronous',' login','!',
+ 'line vty 0 4',' password 7 0814564F02485744',' login','--More--'],
+ dim:[1,3,23],
+ marks:[{l:0,n:'1',from:3},{l:9,n:'2'},{l:16,n:'3',from:1},{l:21,n:'3',from:1},{l:13,n:'4'}]
+}));
+// Şekil 11 – Telnet
+fill('fig-t3', term({title:'PC2',tabs:PT,active:'Desktop',inner:'Command Prompt',lines:[
+ 'Cisco Packet Tracer PC Command Line 1.0','C:\\>telnet 192.168.1.1','Trying 192.168.1.1 ...Open','',
+ 'Yetkisiz giris yasaktir!','','','User Access Verification','','Password:','R1>enable','Password:','R1#',
+ 'R1#exit','','[Connection to 192.168.1.1 closed by foreign host]','C:\\>telnet 192.168.1.2','Trying 192.168.1.2 ...Open'],
+ dim:[0,15],
+ marks:[{l:1,n:'1',from:3},{l:9,n:'2',len:9},{l:10,n:'3',from:3},{l:13,n:'4',from:3},{l:16,n:'4',from:3}]
+}));
+// Şekil 12 – SSH
+fill('fig-t4', term({title:'PC2',tabs:PT,active:'Desktop',inner:'Command Prompt',lines:[
+ 'C:\\>ssh -l admin 192.168.1.1','','Password:','','','Yetkisiz giris yasaktir!','','R1>enable','Password:','R1#exit','',
+ '[Connection to 192.168.1.1 closed by foreign host]','C:\\>telnet 192.168.1.1','Trying 192.168.1.1 ...','% Connection refused by remote host','C:\\>'],
+ dim:[11],
+ marks:[{l:0,n:'1',from:3},{l:2,n:'2',len:9},{l:12,n:'3',from:3},{l:14,n:'3'}]
+}));
+</script>
+</body>
+</html>
