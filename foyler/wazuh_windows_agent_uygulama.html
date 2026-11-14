@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Wazuh Windows Agent Uygulaması</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+  :root {
+    --ink: #1d2433; --muted: #5b6475; --accent: #1f5fa8; --accent-soft: #e8f0fa;
+    --why: #8a5a00; --why-bg: #fff6e0; --warn: #a12a2a; --warn-bg: #fdecec;
+    --ok: #1d6b3a; --ok-bg: #e7f5ec; --line: #d6dbe4; --code-bg: #f3f5f8;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Inter", "DejaVu Sans", sans-serif; color: var(--ink); font-size: 10.3pt; line-height: 1.5; margin: 0; background: #fff; }
+  h1 { font-size: 20pt; margin: 0 0 4px; color: var(--accent); letter-spacing: -0.3px; }
+  h2 { font-size: 14pt; margin: 22px 0 8px; padding: 6px 10px; background: var(--accent); color: #fff; border-radius: 6px; break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; color: var(--accent); break-after: avoid; }
+  p { margin: 5px 0; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  .meta { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin: 10px 0 4px; font-size: 9.5pt; color: var(--muted); }
+  .step { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 12px 0; break-inside: avoid; }
+  .step > .t { font-weight: 700; }
+  .step > .t .n { display: inline-block; min-width: 54px; color: var(--accent); }
+  .why, .warn, .ok, .note { border-radius: 6px; padding: 7px 10px; margin: 7px 0; font-size: 9.6pt; break-inside: avoid; }
+  .why { background: var(--why-bg); border-left: 3px solid #e0a400; }
+  .why::before { content: "Neden? "; font-weight: 700; color: var(--why); }
+  .warn { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+  .warn::before { content: "Dikkat: "; font-weight: 700; color: var(--warn); }
+  .ok { background: var(--ok-bg); border-left: 3px solid var(--ok); }
+  .ok::before { content: "Beklenen sonuç: "; font-weight: 700; color: var(--ok); }
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+  .note::before { content: "Not: "; font-weight: 700; color: var(--accent); }
+  pre, code { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 8.6pt; white-space: pre-wrap; word-break: break-all; margin: 6px 0; break-inside: avoid; }
+  code { background: var(--code-bg); padding: 0 3px; border-radius: 3px; font-size: 9pt; }
+  .where { font-size: 8.5pt; color: var(--muted); font-weight: 600; margin-top: 6px; }
+  .path { font-weight: 600; color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9.3pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  .blank { color: #9aa3b2; }
+  .pb { break-before: page; }
+  svg text { font-family: "Inter", "DejaVu Sans", sans-serif; }
+  .small { font-size: 9pt; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>Wazuh: Windows Agent Kurulumu ve Güvenlik Olaylarının İzlenmesi</h1>
+<p class="sub">İşletim Sistemlerinin Güvenliği · Uygulama Föyü · Log Yönetimi ders kitabı s. 46–53 (1. ve 2. Uygulama) güncel Wazuh arayüzüne göre uyarlanmıştır.</p>
+<div class="meta">Ad Soyad: ______________________ &nbsp;&nbsp; No: ________ &nbsp;&nbsp; Bilgisayar No: ________ &nbsp;&nbsp; Tarih: ____/____/______</div>
+
+<h2>Laboratuvar düzeni</h2>
+<p>Her bilgisayarda iki sistem vardır. <b>Windows</b> (ana bilgisayar), izlenecek sistemdir; buraya <b>Wazuh agent</b> kuracağız. <b>Ubuntu sanal makine</b> ise <b>Wazuh sunucusudur</b>: logları toplar, analiz eder ve web arayüzünü sunar.</p>
+
+<svg viewBox="0 0 720 200" width="100%" role="img" aria-label="Laboratuvar topolojisi">
+  <rect x="10" y="20" width="700" height="170" rx="12" fill="#f7f9fc" stroke="#d6dbe4"/>
+  <text x="24" y="42" font-size="12" fill="#5b6475" font-weight="600">Okul bilgisayarı (Windows)</text>
+  <rect x="30" y="60" width="230" height="110" rx="10" fill="#fff" stroke="#1f5fa8" stroke-width="1.5"/>
+  <text x="145" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2433">Windows</text>
+  <text x="145" y="108" text-anchor="middle" font-size="11" fill="#1d2433">Wazuh Agent (WazuhSvc)</text>
+  <text x="145" y="128" text-anchor="middle" font-size="11" fill="#1d2433">Tarayıcı (web arayüzü)</text>
+  <text x="145" y="152" text-anchor="middle" font-size="10" fill="#5b6475">Olay günlükleri, dosyalar, ayarlar</text>
+  <rect x="450" y="60" width="240" height="110" rx="10" fill="#fff" stroke="#1d6b3a" stroke-width="1.5"/>
+  <text x="570" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2433">Ubuntu sanal makine</text>
+  <text x="570" y="108" text-anchor="middle" font-size="11" fill="#1d2433">Wazuh Manager · Indexer</text>
+  <text x="570" y="128" text-anchor="middle" font-size="11" fill="#1d2433">Wazuh Dashboard</text>
+  <text x="570" y="152" text-anchor="middle" font-size="10" fill="#5b6475">IP: ___.___.___.___</text>
+  <line x1="262" y1="92" x2="446" y2="92" stroke="#1f5fa8" stroke-width="2" marker-end="url(#a)"/>
+  <text x="354" y="84" text-anchor="middle" font-size="10.5" fill="#1f5fa8">Agent kaydı: TCP 1515</text>
+  <line x1="262" y1="118" x2="446" y2="118" stroke="#1f5fa8" stroke-width="2" marker-end="url(#a)"/>
+  <text x="354" y="112" text-anchor="middle" font-size="10.5" fill="#1f5fa8">Log gönderimi: TCP 1514</text>
+  <line x1="262" y1="146" x2="446" y2="146" stroke="#1d6b3a" stroke-width="2" marker-end="url(#b)"/>
+  <text x="354" y="140" text-anchor="middle" font-size="10.5" fill="#1d6b3a">Web arayüzü: HTTPS 443</text>
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1f5fa8"/></marker>
+    <marker id="b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1d6b3a"/></marker>
+  </defs>
+</svg>
+<p class="why">Agent, Windows'ta olan biteni (oturum açmalar, dosya değişiklikleri, ayarlar) toplayıp sunucuya gönderir. Sunucu bu kayıtları kurallarla karşılaştırır ve şüpheli olanları <b>alarma</b> çevirir. Bu yüzden iki makinenin bu üç port üzerinden birbirine ulaşabilmesi şarttır.</p>
+
+<!-- ===================== BÖLÜM 0 ===================== -->
+<h2>Bölüm 0: Başlamadan önce kontroller</h2>
+
+<div class="step"><div class="t"><span class="n">Adım 0.1</span> Ubuntu sanal makineyi başlatın ve Wazuh servislerini kontrol edin.</div>
+<div class="where">Ubuntu terminali</div>
+<pre>sudo systemctl status wazuh-manager wazuh-indexer wazuh-dashboard --no-pager | grep -E "●|Active"</pre>
+<p class="ok">Üç servisin yanında da <code>active (running)</code> yazar.</p>
+<p class="why">Wazuh üç parçadan oluşur. <b>Manager</b> logları analiz eder, <b>Indexer</b> alarmları saklar ve aranabilir yapar, <b>Dashboard</b> ise tarayıcıdan gördüğümüz arayüzdür. Biri çalışmazsa ya agent bağlanamaz ya da arayüz boş görünür. Sanal makine yeni açıldıysa servislerin tam kalkması 1–2 dakika sürebilir.</p>
+<p class="small">Çalışmayan servis varsa: <code>sudo systemctl restart wazuh-indexer wazuh-manager wazuh-dashboard</code></p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 0.2</span> Ubuntu'nun IP adresini ve Wazuh sürümünü öğrenin.</div>
+<div class="where">Ubuntu terminali</div>
+<pre>hostname -I
+sudo /var/ossec/bin/wazuh-control info | grep VERSION</pre>
+<table><tr><th style="width:40%">Wazuh sunucu IP adresi</th><td class="blank">___.___.___.___</td></tr><tr><th>Wazuh sürümü</th><td class="blank">v4.___.___</td></tr></table>
+<p class="why">Agent'a "logları kime göndereceğini" bu IP ile söyleyeceğiz. Sürümü not ediyoruz, çünkü <b>agent sürümü sunucu sürümünden yeni olamaz</b>; yeni bir agent eski bir sunucuya bağlanamaz.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 0.3</span> Ubuntu güvenlik duvarında gerekli portları açın.</div>
+<div class="where">Ubuntu terminali</div>
+<pre>sudo ufw status
+# "Status: active" görünüyorsa:
+sudo ufw allow 443/tcp
+sudo ufw allow 1514/tcp
+sudo ufw allow 1515/tcp</pre>
+<p class="why">Güvenlik duvarı açıksa ve bu portlara izin verilmemişse Windows'taki agent sunucuya ulaşamaz. "Status: inactive" görünüyorsa bu adımı atlayın.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 0.4</span> Windows'tan sunucuya erişimi test edin.</div>
+<div class="where">Windows PowerShell</div>
+<pre>Test-NetConnection 192.168.56.101 -Port 1514
+Test-NetConnection 192.168.56.101 -Port 1515
+Test-NetConnection 192.168.56.101 -Port 443</pre>
+<p class="small">IP yerine Adım 0.2'de not ettiğiniz adresi yazın.</p>
+<p class="ok">Üç testte de <code>TcpTestSucceeded : True</code> yazar.</p>
+<p class="why">Kuruluma geçmeden ağ yolunun açık olduğundan emin oluyoruz. Kitaptaki uygulamada en sık yaşanan "agent kuruldu ama listede görünmüyor" sorununun nedeni neredeyse her zaman budur.</p>
+<p class="warn"><code>False</code> çıkıyorsa sanal makinenin ağ ayarı büyük olasılıkla <b>NAT</b>'tır. NAT modunda Windows sanal makineye doğrudan ulaşamaz. Öğretmeninize haber verin: ağ bağdaştırıcısının <b>Host-only</b> ya da <b>Köprü (Bridged)</b> olarak değiştirilmesi gerekir.</p>
+</div>
+
+<!-- ===================== UYGULAMA 1 ===================== -->
+<h2 class="pb">Uygulama 1: Windows'a Wazuh agent kurulumu</h2>
+
+<div class="step"><div class="t"><span class="n">Adım 1</span> Wazuh web arayüzüne giriş yapın.</div>
+<p>Windows'ta tarayıcıyı açın ve adres çubuğuna <code>https://&lt;sunucu-IP&gt;</code> yazın. Kullanıcı adı <code>admin</code>; parolayı öğretmeninizden alın.</p>
+<p class="note">"Bağlantınız gizli değil" uyarısı çıkarsa <b>Gelişmiş → Siteye ilerle</b> seçeneğiyle devam edin.</p>
+<p class="why">Wazuh kurulumda kendi imzaladığı (self-signed) bir sertifika üretir. Bağlantı yine şifrelidir, ancak sertifika tanınmış bir kuruluşça imzalanmadığı için tarayıcı uyarı verir. Laboratuvar ortamında bu normaldir.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 2</span> Agent yönetim ekranını açın.</div>
+<p>Sol üstteki <b>☰ menü</b> simgesine tıklayın ve <span class="path">Agents management → Summary</span> yolunu izleyin. Sayfa başlığı <b>Endpoints</b> olarak görünebilir.</p>
+<p class="note">Kitaptaki <i>Wazuh → Agents</i> menüsü, Wazuh 4.8 ve sonrasında bu yeni menüyle değiştirilmiştir.</p>
+<p class="why">Bu ekran sunucuya kayıtlı tüm agent'ları ve durumlarını (Active, Disconnected, Pending, Never connected) gösterir. Kurulumdan sonra agent'ımızın burada <b>Active</b> görünmesi başarının kanıtı olacak.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 3</span> <b>Deploy new agent</b> düğmesine tıklayın.</div>
+<p class="why">Wazuh, seçtiğimiz bilgilere göre kurulum komutunu kendisi üretir. Böylece doğru sürümü, doğru sunucu adresini ve doğru parametreleri elle yazmak zorunda kalmayız.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 4</span> İşletim sistemi paketini seçin.</div>
+<p><b>WINDOWS</b> kartında <b>MSI 32/64 bits</b> seçeneğini işaretleyin.</p>
+<p class="note">Kitapta yer alan "Windows XP / Windows 7+" sürüm seçimi ve ayrı mimari adımı yeni arayüzde kaldırılmıştır. Tek MSI paketi hem 32 hem 64 bit Windows'a kurulur.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 5</span> Sunucu adresini ve agent adını girin.</div>
+<p><b>Server address</b> kutusuna Ubuntu'nun IP adresini yazın. <b>Optional settings</b> bölümünde <b>Assign an agent name</b> alanına benzersiz bir ad verin (örnek: <code>PC07-AYILMAZ</code>). Grup olarak <code>default</code> kalsın.</p>
+<p class="why">Agent adı, sunucunun bu bilgisayarı diğerlerinden ayırt etmesini sağlar ve kayıttan sonra <b>değiştirilemez</b>. Aynı ad iki kez kullanılırsa ikinci kayıt reddedilir. Türkçe karakter ve boşluk kullanmayın; yalnızca harf, rakam, <code>-</code> ve <code>_</code> güvenlidir.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 6</span> PowerShell'i <b>yönetici olarak</b> açın.</div>
+<p>Başlat simgesine sağ tıklayın ve <b>Terminal (Yönetici)</b> ya da <b>Windows PowerShell (Yönetici)</b> seçeneğini seçin. Açılan pencerenin başlığında <b>Yönetici / Administrator</b> yazdığını kontrol edin.</p>
+<p class="why">Agent bir Windows <b>hizmeti</b> olarak kurulur, <code>C:\Program Files (x86)</code> altına yazılır ve güvenlik olay günlüklerini okur. Bu üç işlemin üçü de yönetici yetkisi ister. Normal yetkiyle çalıştırılan komut hata vermeden yarıda kalabilir.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 7</span> Arayüzün ürettiği kurulum komutunu kopyalayıp PowerShell'e yapıştırın ve çalıştırın.</div>
+<p>Komut aşağıdakine benzer olacaktır. <b>Kendiniz yazmayın, arayüzden kopyalayın.</b></p>
+<pre>Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-4.X.X-1.msi -OutFile $env:tmp\wazuh-agent; msiexec.exe /i $env:tmp\wazuh-agent /q WAZUH_MANAGER='192.168.56.101' WAZUH_AGENT_NAME='PC07-AYILMAZ'</pre>
+<p class="why">Komut iki iş yapar. <code>Invoke-WebRequest</code> kurulum paketini (MSI) Wazuh sitesinden indirir. <code>msiexec /q</code> ise paketi sessizce (pencere açmadan) kurar ve <code>WAZUH_MANAGER</code> ile <code>WAZUH_AGENT_NAME</code> değerlerini doğrudan agent ayarlarına yazar. Bu sayede kurulum biter bitmez agent sunucuyu tanır.</p>
+<p class="warn">Okul ağı internete çıkışı engelliyorsa indirme başarısız olur. Bu durumda öğretmeninizin dağıttığı MSI dosyasıyla kurun:</p>
+<pre>msiexec.exe /i C:\Lab\wazuh-agent-4.X.X-1.msi /q WAZUH_MANAGER='192.168.56.101' WAZUH_AGENT_NAME='PC07-AYILMAZ'</pre>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 8</span> Agent hizmetini başlatın ve durumunu kontrol edin.</div>
+<pre>NET START Wazuh
+Get-Service WazuhSvc</pre>
+<p class="ok">"Wazuh hizmeti başarıyla başlatıldı" mesajı görünür ve <code>Get-Service</code> çıktısında <code>Status</code> sütunu <code>Running</code> olur.</p>
+<p class="why">Kurulum hizmeti yalnızca oluşturur, çalıştırmaz. Hizmet başladığı anda agent sunucuya bağlanır, 1515 portundan kaydını yapar ve 1514 portundan log göndermeye başlar. Kitaptaki "bilgisayarı yeniden başlatın" adımına <b>gerek yoktur</b>.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 9</span> Agent'ın arayüzde göründüğünü doğrulayın.</div>
+<p>Tarayıcıda <span class="path">Agents management → Summary</span> ekranına dönün ve <b>Refresh</b> düğmesine basın.</p>
+<p class="ok">Agent listesinde kendi agent adınız, Windows sürümünüz ve <b>active</b> durumu görünür.</p>
+<table>
+<tr><th style="width:40%">Agent ID</th><td class="blank">________</td></tr>
+<tr><th>Agent adı</th><td class="blank">______________________</td></tr>
+<tr><th>Durum</th><td class="blank">______________________</td></tr>
+</table>
+</div>
+
+<h3>Agent görünmüyorsa: sorun giderme</h3>
+<p>Önce agent'ın kendi log dosyasına bakın. Hatanın nedeni genellikle burada yazar:</p>
+<pre>Get-Content "C:\Program Files (x86)\ossec-agent\ossec.log" -Tail 25</pre>
+<table>
+<tr><th style="width:42%">Log'da görülen / Belirti</th><th>Neden ve çözüm</th></tr>
+<tr><td><code>Unable to connect to enrollment service</code> ya da <code>Unable to connect to '...':1514</code></td><td>Ağ yolu kapalı. Bölüm 0'daki Adım 0.3 ve 0.4'ü tekrar yapın.</td></tr>
+<tr><td><code>Duplicate agent name</code> / <code>Agent name already exists</code></td><td>Bu ad daha önce kullanılmış. Öğretmeniniz sunucudan eski kaydı silmeli ya da farklı bir adla yeniden kurmalısınız.</td></tr>
+<tr><td><code>Agent version must be lower or equal to manager version</code></td><td>Agent sürümü sunucudan yeni. Sunucuyla aynı sürümdeki MSI'yı kurun.</td></tr>
+<tr><td>Listede <b>never connected</b> ya da <b>disconnected</b></td><td>Hizmet çalışmıyor olabilir: <code>Restart-Service WazuhSvc</code></td></tr>
+</table>
+<p><b>Alternatif yöntem (kitaptaki 10. Adım):</b> <code>C:\Program Files (x86)\ossec-agent\win32ui.exe</code> dosyasını yönetici olarak çalıştırın. Açılan <b>Wazuh Agent Manager</b> penceresinde <b>Manager IP</b> alanına sunucu adresini yazın, <b>Save</b> ile kaydedin ve <b>Manage → Restart</b> ile hizmeti yeniden başlatın. Yeni sürümlerde <b>Authentication key</b> alanını elle doldurmanız gerekmez; agent ilk bağlantıda anahtarı otomatik alır.</p>
+
+<!-- ===================== UYGULAMA 2 ===================== -->
+<h2 class="pb">Uygulama 2: Agent'tan gelen güvenlik olaylarını izleme</h2>
+
+<div class="step"><div class="t"><span class="n">Adım 1</span> Agent'ın özet ekranını açın.</div>
+<p><span class="path">Agents management → Summary</span> listesinde kendi agent adınıza tıklayın.</p>
+<p class="why">Bu ekran tek bir bilgisayarın güvenlik özetidir: MITRE ATT&amp;CK taktikleri, uyumluluk (Compliance) dağılımı, son dosya bütünlüğü olayları ve son yapılandırma taraması. Yönetici çok sayıda makine arasından sorunlu olana buradan odaklanır.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 2</span> Güvenlik olayları ekranını açın.</div>
+<p><span class="path">☰ → Threat intelligence → Threat Hunting</span> yolunu izleyin. Üst kısımdaki agent seçiciden kendi agent'ınızı seçin.</p>
+<p class="note">Kitaptaki <i>More → Security events</i> ekranının yeni adı <b>Threat Hunting</b>'dir. <b>Dashboard</b> sekmesi grafikleri, <b>Events</b> sekmesi olay listesini gösterir.</p>
+<p class="why">Kurulumdan bu yana gelen tüm alarmlar burada toplanır. Dashboard sekmesindeki <b>Total</b>, <b>Level 12 or above alerts</b>, <b>Authentication failure</b> ve <b>Authentication success</b> sayaçları sistemin genel durumunu tek bakışta özetler.</p>
+<table>
+<tr><th>Total</th><th>Level 12 or above</th><th>Authentication failure</th><th>Authentication success</th></tr>
+<tr><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td></tr>
+</table>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 3</span> <b>Events</b> sekmesinde olay listesini inceleyin.</div>
+<p>Listede her satır bir alarmdır. Şu sütunlara dikkat edin: <b>rule.description</b> (ne oldu), <b>rule.level</b> (önem seviyesi, 0–15), <b>rule.id</b> (hangi kural tetiklendi) ve <b>rule.mitre.id</b> (MITRE ATT&amp;CK teknik kodu).</p>
+<p class="why">Seviye ne kadar yüksekse olay o kadar önemlidir. 3 gibi düşük seviyeler bilgilendirme amaçlıdır (ör. başarılı oturum açma); 10 ve üstü dikkat ister; 12 ve üstü genellikle acil incelenmesi gereken olaylardır. Kural ID'si ise aynı türdeki olayları filtrelemeyi kolaylaştırır.</p>
+</div>
+
+<h3>2-A: Başarısız oturum açma olayı oluşturma</h3>
+
+<div class="step"><div class="t"><span class="n">Adım 4</span> Windows'ta oturum açma denetiminin açık olduğunu doğrulayın.</div>
+<div class="where">Windows PowerShell (Yönetici)</div>
+<pre>auditpol /get /subcategory:"{0CCE9215-69AE-11D9-BED3-505054503030}"</pre>
+<p class="ok">Çıktıda <b>Başarı ve Hata</b> (Success and Failure) yazar.</p>
+<p class="small">Yalnızca "Başarı" yazıyorsa açın: <code>auditpol /set /subcategory:"{0CCE9215-69AE-11D9-BED3-505054503030}" /success:enable /failure:enable</code></p>
+<p class="why">Windows bir olayı <b>denetleme ilkesi</b> açık değilse hiç kaydetmez; kaydedilmeyen bir olayı da Wazuh göremez. Komutta alt kategorinin adı yerine kimliği (GUID) kullanıyoruz, çünkü Türkçe Windows'ta kategori adları Türkçedir ve İngilizce adla verilen komut hata verir.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 5</span> Bilerek yanlış parola girin.</div>
+<p><b>Windows + L</b> tuşlarıyla ekranı kilitleyin. Kendi kullanıcınız için <b>3 kez yanlış parola</b> girin, ardından doğru parolayla oturum açın.</p>
+<p class="why">Windows her başarısız denemeyi Güvenlik günlüğüne <b>Olay Kimliği 4625</b> olarak yazar. Agent bu kaydı okuyup sunucuya gönderir, sunucu da kuralla eşleştirip alarm üretir. Böylece gerçek bir parola deneme saldırısının ilk izlerini güvenli biçimde görmüş oluruz.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 6</span> Oluşan alarmı bulun ve inceleyin.</div>
+<p>Threat Hunting → <b>Events</b> sekmesine dönün. Arama çubuğuna <code>rule.id:60122</code> yazıp Enter'a basın. Bir alarm satırının solundaki oka tıklayarak ayrıntılarını açın.</p>
+<p class="ok"><b>Logon failure - Unknown user or bad password</b> açıklamalı, seviyesi 5 olan alarmlar görünür. Ardından gelen başarılı oturum açma da <b>Windows logon success</b> (kural 60106) olarak listelenir.</p>
+<p class="why">Ayrıntı ekranında hangi kullanıcı adıyla, hangi bilgisayardan ve hangi oturum türüyle deneme yapıldığı görülür (<code>data.win.eventdata.targetUserName</code>, <code>data.win.system.eventID</code>). Saldırı incelemesinde ilk sorulan soru "kim, ne zaman, nereden?"dir ve bu alanlar o soruyu yanıtlar.</p>
+<table>
+<tr><th style="width:40%">Alarm açıklaması</th><td class="blank">&nbsp;</td></tr>
+<tr><th>Kural ID / Seviye</th><td class="blank">&nbsp;</td></tr>
+<tr><th>Windows Olay Kimliği (eventID)</th><td class="blank">&nbsp;</td></tr>
+<tr><th>MITRE teknik kodu</th><td class="blank">&nbsp;</td></tr>
+</table>
+<p class="note">Kısa sürede çok sayıda başarısız deneme yapılırsa Wazuh tekil alarmların yanında daha yüksek seviyeli ayrı bir <b>çoklu başarısız oturum</b> alarmı üretir. Bu, parola deneme (brute force) saldırısının tespit edilme biçimidir.</p>
+</div>
+
+<h3 class="pb">2-B: Dosya bütünlüğü izleme (FIM)</h3>
+
+<div class="step"><div class="t"><span class="n">Adım 7</span> İzlenecek bir test klasörü oluşturun.</div>
+<div class="where">Windows PowerShell (Yönetici)</div>
+<pre>New-Item -ItemType Directory -Path C:\LabFIM</pre>
+<p class="why">Windows agent'ı varsayılan olarak <code>C:\Windows\System32</code> gibi sistem klasörlerini izler; Masaüstü veya İndirilenler gibi kullanıcı klasörlerini <b>izlemez</b>. Kitaptaki 6. Adım'da bu ayar anlatılmadığı için dosya işlemleri alarm üretmeyebilir. Bu yüzden izlenecek klasörü kendimiz tanımlıyoruz.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 8</span> Klasörü agent ayarlarına ekleyin.</div>
+<p>Not Defteri'ni <b>yönetici olarak</b> açın ve <code>C:\Program Files (x86)\ossec-agent\ossec.conf</code> dosyasını açın. <code>&lt;syscheck&gt;</code> bölümünü bulun ve içine aşağıdaki satırı ekleyin:</p>
+<pre>&lt;directories realtime="yes" check_all="yes"&gt;C:\LabFIM&lt;/directories&gt;</pre>
+<p>Dosyayı kaydedin, ardından agent'ı yeniden başlatın:</p>
+<pre>Restart-Service WazuhSvc</pre>
+<p class="why"><code>realtime="yes"</code> olmadan agent klasörü yalnızca periyodik taramada (varsayılan olarak 12 saatte bir) kontrol eder. Gerçek zamanlı izleme açıldığında her değişiklik anında bildirilir. <code>check_all="yes"</code> ise boyut, sahip, izinler ve özet (hash) değerlerinin hepsinin karşılaştırılmasını sağlar. Agent ayar dosyasını yalnızca başlarken okuduğu için yeniden başlatma şarttır.</p>
+<p class="warn">Etiketleri yazarken tırnak ve açılı ayraçlara dikkat edin. Hatalı bir <code>ossec.conf</code> dosyası agent'ın hiç başlamamasına neden olur. Böyle olursa hata satırını <code>ossec.log</code> dosyasında görürsünüz.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 9</span> Dosya oluşturun, değiştirin ve silin.</div>
+<p>Agent yeniden başladıktan sonra yaklaşık 30 saniye bekleyin, ardından komutları <b>arada 10–15 saniye bırakarak</b> sırayla çalıştırın:</p>
+<pre>Set-Content C:\LabFIM\gizli.txt "ilk icerik"
+Add-Content C:\LabFIM\gizli.txt "yetkisiz degisiklik"
+Remove-Item C:\LabFIM\gizli.txt</pre>
+<p class="why">Bekleme, agent'ın ilk taramayı bitirip klasörün "temiz" hâlini (baseline) kaydetmesi içindir. FIM her değişikliği bu ilk hâlle karşılaştırarak tespit eder. Saldırganlar sisteme girdikten sonra genellikle dosya bırakır, ayar dosyalarını değiştirir ya da izlerini silmek için kayıtları siler. FIM bu üç davranışı da yakalar.</p>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 10</span> FIM alarmlarını inceleyin.</div>
+<p><span class="path">☰ → Endpoint security → File Integrity Monitoring</span> yolunu izleyin, agent'ınızı seçin ve <b>Events</b> sekmesine geçin.</p>
+<p class="ok">Üç alarm görünür: <b>File added to the system</b> (554), <b>Integrity checksum changed</b> (550) ve <b>File deleted</b> (553).</p>
+<p class="why">"Değiştirildi" alarmının ayrıntısında dosyanın eski ve yeni özet (MD5/SHA1/SHA256) değerleri yan yana görülür. Özet değerinin değişmesi, içeriğin değiştiğinin kesin kanıtıdır.</p>
+<table>
+<tr><th style="width:30%">İşlem</th><th style="width:20%">Kural ID</th><th>Alarm açıklaması</th></tr>
+<tr><td>Oluşturma</td><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td></tr>
+<tr><td>Değiştirme</td><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td></tr>
+<tr><td>Silme</td><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td></tr>
+</table>
+</div>
+
+<h3>2-C: Güvenlik yapılandırma denetimi (CIS kontrolleri)</h3>
+
+<div class="step"><div class="t"><span class="n">Adım 11</span> CIS tarama sonuçlarını açın.</div>
+<p><span class="path">☰ → Endpoint security → Configuration Assessment</span> yolunu izleyin ve agent'ınızı seçin. Listedeki <b>CIS Microsoft Windows 10/11 ... Benchmark</b> politikasına tıklayın.</p>
+<p class="note">Kitaptaki "SCA" modülünün yeni adı <b>Configuration Assessment</b>'tır. Agent ilk başladığında taramayı otomatik yapar; sonuç görünmüyorsa birkaç dakika bekleyip sayfayı yenileyin.</p>
+<p class="why">CIS (Center for Internet Security) kıyaslamaları, bir işletim sisteminin güvenli kabul edilmesi için hangi ayarların nasıl olması gerektiğini listeleyen uluslararası rehberlerdir. Wazuh her maddeyi bilgisayardaki gerçek ayarla karşılaştırır ve <b>Passed / Failed / Not applicable</b> olarak işaretler. Bu ekran, sistemin saldırıya ne kadar açık yapılandırıldığını ölçer.</p>
+<table>
+<tr><th>Passed</th><th>Failed</th><th>Not applicable</th><th>Score (%)</th></tr>
+<tr><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td></tr>
+</table>
+</div>
+
+<div class="step"><div class="t"><span class="n">Adım 12</span> Başarısız bir kontrolü inceleyin.</div>
+<p>Sonuç sütununda <b>Failed</b> yazan bir satıra tıklayın. Açılan ayrıntıda <b>Rationale</b> (neden önemli), <b>Remediation</b> (nasıl düzeltilir) ve <b>Checks</b> (Wazuh'un neyi kontrol ettiği) bölümlerini okuyun.</p>
+<table>
+<tr><th style="width:30%">Kontrol başlığı</th><td class="blank">&nbsp;<br>&nbsp;</td></tr>
+<tr><th>Neden önemli? (kendi cümlenizle)</th><td class="blank">&nbsp;<br>&nbsp;</td></tr>
+<tr><th>Nasıl düzeltilir?</th><td class="blank">&nbsp;<br>&nbsp;</td></tr>
+</table>
+<p class="why">Tespit sistemi yalnızca alarm vermez, açıkların <b>nasıl kapatılacağını</b> da gösterir. Bir yönetici bu listeyi kullanarak sistemi adım adım sertleştirir (hardening) ve saldırı yüzeyini küçültür.</p>
+</div>
+
+<h3>Uygulama sonu: Temizlik</h3>
+<p>Ders sonunda öğretmeniniz aksini söylemedikçe test klasörünü silin: <code>Remove-Item C:\LabFIM -Recurse</code>. Agent kurulu kalabilir; sonraki derste kullanılacaktır.</p>
+
+<!-- ===================== ÖĞRETMEN NOTU ===================== -->
+<h2 class="pb">Öğretmen notu: Kitaptaki uygulamaya göre değişenler</h2>
+<table>
+<tr><th style="width:24%">Kitap (s. 46–53)</th><th style="width:34%">Güncel durum (Wazuh 4.8 ve sonrası)</th><th>Föyde yapılan</th></tr>
+<tr><td>Wazuh → Agents</td><td>☰ → Agents management → Summary (Endpoints)</td><td>Menü yolu güncellendi</td></tr>
+<tr><td>Windows XP / 7+ ve mimari seçimi</td><td>Tek seçenek: WINDOWS → MSI 32/64 bits</td><td>Adım sadeleştirildi</td></tr>
+<tr><td>Komutta <code>wazuh-agent-4.5.4-1.msi</code></td><td>Sürüm, sunucu sürümüyle aynı olmalı; komut arayüzden kopyalanmalı</td><td>Sürüm kontrolü (Adım 0.2) eklendi</td></tr>
+<tr><td>8. Adım: Bilgisayarı yeniden başlatın</td><td>Gerekmiyor; hizmeti başlatmak yeterli</td><td>Kaldırıldı, <code>Get-Service</code> kontrolü eklendi</td></tr>
+<tr><td>Ağ ve güvenlik duvarı anlatılmıyor</td><td>Sanal makinede NAT kullanılıyorsa agent bağlanamaz</td><td>Bölüm 0 (port testi) eklendi</td></tr>
+<tr><td>10. Adım: win32ui.exe ile Authentication key</td><td>Anahtar otomatik alınıyor; yalnızca Manager IP yeterli</td><td>Sorun giderme bölümüne taşındı</td></tr>
+<tr><td>More → Security events</td><td>☰ → Threat intelligence → Threat Hunting</td><td>Menü yolu güncellendi</td></tr>
+<tr><td>Başarısız oturum açma (denetim ayarı anlatılmıyor)</td><td>Denetim ilkesi kapalıysa olay hiç oluşmaz</td><td>auditpol kontrolü eklendi (GUID ile, Türkçe Windows uyumlu)</td></tr>
+<tr><td>6. Adım: Dosya yükleme/silme ile FIM alarmı</td><td>Varsayılan ayarda kullanıcı klasörleri izlenmiyor</td><td>ossec.conf'a gerçek zamanlı izleme eklendi</td></tr>
+<tr><td>VirusTotal alarmları (görselde)</td><td>Sunucuda VirusTotal API anahtarıyla entegrasyon gerektirir</td><td>Föye alınmadı</td></tr>
+<tr><td>SCA / CIS kontrolleri</td><td>Modül adı: Configuration Assessment</td><td>Menü yolu güncellendi, inceleme adımı eklendi</td></tr>
+</table>
+
+<h3>Ders öncesi hazırlık listesi</h3>
+<table>
+<tr><th style="width:5%">✓</th><th>Kontrol</th></tr>
+<tr><td>☐</td><td>Ubuntu sanal makinelerin ağ bağdaştırıcısı <b>Host-only</b> ya da <b>Bridged</b> (NAT kullanılacaksa VirtualBox'ta 443, 1514 ve 1515 için port yönlendirme yapılmalı ve sunucu adresi olarak <code>127.0.0.1</code> girilmeli).</td></tr>
+<tr><td>☐</td><td>Sanal makineye en az 4 GB (tercihen 8 GB) RAM atanmış. Daha azında Indexer başlamayabilir ve arayüz boş görünür.</td></tr>
+<tr><td>☐</td><td>Öğrenci hesaplarında yönetici yetkisi var ya da kurulum için yönetici parolası hazır.</td></tr>
+<tr><td>☐</td><td><code>packages.wazuh.com</code> okul ağından erişilebilir. Erişilemiyorsa sunucu sürümüyle aynı MSI dosyası önceden indirilip <code>C:\Lab</code> klasörüne kopyalanmalı.</td></tr>
+<tr><td>☐</td><td>Dashboard <code>admin</code> parolası biliniyor. Kurulum asistanıyla kurulduysa: <code>sudo tar -O -xvf wazuh-install-files.tar wazuh-install-files/wazuh-passwords.txt</code></td></tr>
+<tr><td>☐</td><td>Bilgisayarlarda Deep Freeze vb. bir geri yükleme yazılımı varsa agent kurulumu yeniden başlatmada silinebilir; ders boyunca yeniden başlatma yaptırılmamalı.</td></tr>
+<tr><td>☐</td><td>Bilgisayarlar bir kez önceden denendiyse eski agent kayıtları silinmeli (aksi hâlde "duplicate name" hatası alınır): <code>sudo /var/ossec/bin/manage_agents -l</code> ile listeleyin, <code>sudo /var/ossec/bin/manage_agents -r &lt;ID&gt;</code> ile silin.</td></tr>
+</table>
+
+<h3>Önerilen süre planı (3 saat)</h3>
+<table>
+<tr><th style="width:25%">Süre</th><th>Bölüm</th></tr>
+<tr><td>20 dk</td><td>Bölüm 0: Kontroller ve port testi</td></tr>
+<tr><td>50 dk</td><td>Uygulama 1: Agent kurulumu ve doğrulama</td></tr>
+<tr><td>15 dk</td><td>Mola</td></tr>
+<tr><td>30 dk</td><td>Uygulama 2, Adım 1–6: Olay ekranı ve başarısız oturum açma</td></tr>
+<tr><td>35 dk</td><td>Uygulama 2, Adım 7–10: Dosya bütünlüğü izleme</td></tr>
+<tr><td>30 dk</td><td>Uygulama 2, Adım 11–12: CIS kontrolleri ve temizlik</td></tr>
+</table>
+
+</body>
+</html>
