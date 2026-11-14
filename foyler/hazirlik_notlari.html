@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Wazuh Ders Hazırlık Notları</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+  :root {
+    --ink: #1d2433; --muted: #5b6475; --accent: #1f5fa8; --accent-soft: #e8f0fa;
+    --why: #8a5a00; --why-bg: #fff6e0; --warn: #a12a2a; --warn-bg: #fdecec;
+    --ok: #1d6b3a; --ok-bg: #e7f5ec; --line: #d6dbe4; --code-bg: #f3f5f8;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Inter", "DejaVu Sans", sans-serif; color: var(--ink); font-size: 10.3pt; line-height: 1.5; margin: 0; background: #fff; }
+  h1 { font-size: 20pt; margin: 0 0 4px; color: var(--accent); letter-spacing: -0.3px; }
+  h2 { font-size: 14pt; margin: 22px 0 8px; padding: 6px 10px; background: var(--accent); color: #fff; border-radius: 6px; break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; color: var(--accent); break-after: avoid; }
+  p { margin: 5px 0; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  .meta { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin: 10px 0 4px; font-size: 9.5pt; color: var(--muted); }
+  .step { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 12px 0; }
+  .step > .t { font-weight: 700; }
+  .step > .t .n { display: inline-block; min-width: 54px; color: var(--accent); }
+  .why, .warn, .ok, .note { border-radius: 6px; padding: 7px 10px; margin: 7px 0; font-size: 9.6pt; break-inside: avoid; }
+  .why { background: var(--why-bg); border-left: 3px solid #e0a400; }
+  .why::before { content: "Neden? "; font-weight: 700; color: var(--why); }
+  .warn { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+  .warn::before { content: "Dikkat: "; font-weight: 700; color: var(--warn); }
+  .ok { background: var(--ok-bg); border-left: 3px solid var(--ok); }
+  .ok::before { content: "Beklenen sonuç: "; font-weight: 700; color: var(--ok); }
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+  .note::before { content: "Not: "; font-weight: 700; color: var(--accent); }
+  pre, code { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 8.6pt; white-space: pre-wrap; word-break: break-all; margin: 6px 0; break-inside: avoid; }
+  code { background: var(--code-bg); padding: 0 3px; border-radius: 3px; font-size: 9pt; }
+  .where { font-size: 8.5pt; color: var(--muted); font-weight: 600; margin-top: 6px; }
+  .path { font-weight: 600; color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9.3pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  .blank { color: #9aa3b2; }
+  .pb { break-before: page; }
+  svg text { font-family: "Inter", "DejaVu Sans", sans-serif; }
+  .small { font-size: 9pt; color: var(--muted); }
+</style>
+</head>
+<body><!-- ===================== ÖĞRETMEN NOTU ===================== -->
+<h1>Ders Hazırlık Notları</h1>
+<p class="sub">Wazuh Windows agent uygulaması · Log Yönetimi ders kitabı s. 46–53 ile karşılaştırma</p>
+<h2>Kitaptaki uygulamaya göre değişenler</h2>
+<table>
+<tr><th style="width:24%">Kitap (s. 46–53)</th><th style="width:34%">Güncel durum (Wazuh 4.8 ve sonrası)</th><th>Föyde yapılan</th></tr>
+<tr><td>Wazuh → Agents</td><td>☰ → Agents management → Summary (Endpoints)</td><td>Menü yolu güncellendi</td></tr>
+<tr><td>Windows XP / 7+ ve mimari seçimi</td><td>Tek seçenek: WINDOWS → MSI 32/64 bits</td><td>Adım sadeleştirildi</td></tr>
+<tr><td>Komutta <code>wazuh-agent-4.5.4-1.msi</code></td><td>Sürüm, sunucu sürümüyle aynı olmalı; komut arayüzden kopyalanmalı</td><td>Sürüm kontrolü (Adım 0.2) eklendi</td></tr>
+<tr><td>8. Adım: Bilgisayarı yeniden başlatın</td><td>Gerekmiyor; hizmeti başlatmak yeterli</td><td>Kaldırıldı, <code>Get-Service</code> kontrolü eklendi</td></tr>
+<tr><td>Ağ ve güvenlik duvarı anlatılmıyor</td><td>OVA VirtualBox'ta NAT ağla kullanılıyorsa agent bağlanamaz</td><td>Bölüm 0 (port testi) eklendi</td></tr>
+<tr><td>10. Adım: win32ui.exe ile Authentication key</td><td>Anahtar otomatik alınıyor; yalnızca Manager IP yeterli</td><td>Sorun giderme bölümüne taşındı</td></tr>
+<tr><td>More → Security events</td><td>☰ → Threat intelligence → Threat Hunting</td><td>Menü yolu güncellendi</td></tr>
+<tr><td>Başarısız oturum açma (denetim ayarı anlatılmıyor)</td><td>Denetim ilkesi kapalıysa olay hiç oluşmaz</td><td>auditpol kontrolü eklendi (GUID ile, Türkçe Windows uyumlu)</td></tr>
+<tr><td>6. Adım: Dosya yükleme/silme ile FIM alarmı</td><td>Varsayılan ayarda kullanıcı klasörleri izlenmiyor</td><td>ossec.conf'a gerçek zamanlı izleme eklendi</td></tr>
+<tr><td>VirusTotal alarmları (görselde)</td><td>Sunucuda VirusTotal API anahtarıyla entegrasyon gerektirir</td><td>Föye alınmadı</td></tr>
+<tr><td>SCA / CIS kontrolleri</td><td>Modül adı: Configuration Assessment</td><td>Menü yolu güncellendi, inceleme adımı eklendi</td></tr>
+</table>
+
+<h3>Ders öncesi hazırlık listesi</h3>
+<table>
+<tr><th style="width:5%">✓</th><th>Kontrol</th></tr>
+<tr><td>☐</td><td>Wazuh OVA sanal makinesinin ağ bağdaştırıcısı <b>Bridged</b> ya da <b>Host-only</b>. VirtualBox'ta NAT bırakılacaksa 443, 1514 ve 1515 portları için port yönlendirme yapılmalı ve sunucu adresi olarak <code>127.0.0.1</code> girilmeli. (VMware'de NAT modunda ana bilgisayar sanal makineye ulaşabilir.)</td></tr>
+<tr><td>☐</td><td>RAM yeterli. OVA varsayılan olarak 8 GB RAM ve 4 işlemci ister. Bilgisayarda toplam 8 GB RAM varsa OVA'yı 4 GB'a düşürün ve <b>Kali sanal makinesini aynı anda açtırmayın</b>. 4 GB'ın altında Indexer başlamayabilir ve arayüz boş görünür.</td></tr>
+<tr><td>☐</td><td>Öğrenci hesaplarında yönetici yetkisi var ya da kurulum için yönetici parolası hazır.</td></tr>
+<tr><td>☐</td><td><code>packages.wazuh.com</code> okul ağından erişilebilir. Erişilemiyorsa sunucu sürümüyle aynı MSI dosyası önceden indirilip <code>C:\Lab</code> klasörüne kopyalanmalı.</td></tr>
+<tr><td>☐</td><td>OVA varsayılan bilgileri: konsol girişi <code>wazuh-user</code> / <code>wazuh</code>, web arayüzü <code>admin</code> / <code>admin</code>. Değiştirildiyse yeni parolalar öğrencilere verilmeli.</td></tr>
+<tr><td>☐</td><td>Bilgisayarlarda Deep Freeze vb. bir geri yükleme yazılımı varsa agent kurulumu yeniden başlatmada silinebilir; ders boyunca yeniden başlatma yaptırılmamalı.</td></tr>
+<tr><td>☐</td><td>Bilgisayarlar bir kez önceden denendiyse eski agent kayıtları silinmeli (aksi hâlde "duplicate name" hatası alınır): <code>sudo /var/ossec/bin/manage_agents -l</code> ile listeleyin, <code>sudo /var/ossec/bin/manage_agents -r &lt;ID&gt;</code> ile silin.</td></tr>
+</table>
+
+<h3>Önerilen süre planı (3 saat)</h3>
+<table>
+<tr><th style="width:25%">Süre</th><th>Bölüm</th></tr>
+<tr><td>20 dk</td><td>Bölüm 0: Kontroller ve port testi</td></tr>
+<tr><td>50 dk</td><td>Uygulama 1: Agent kurulumu ve doğrulama</td></tr>
+<tr><td>15 dk</td><td>Mola</td></tr>
+<tr><td>30 dk</td><td>Uygulama 2, Adım 1–6: Olay ekranı ve başarısız oturum açma</td></tr>
+<tr><td>35 dk</td><td>Uygulama 2, Adım 7–10: Dosya bütünlüğü izleme</td></tr>
+<tr><td>30 dk</td><td>Uygulama 2, Adım 11–12: CIS kontrolleri ve temizlik</td></tr>
+</table>
+
+</body></html>

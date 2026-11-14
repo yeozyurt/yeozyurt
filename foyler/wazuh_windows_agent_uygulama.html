@@ -18,7 +18,7 @@
   p { margin: 5px 0; }
   .sub { color: var(--muted); margin: 0 0 12px; }
   .meta { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin: 10px 0 4px; font-size: 9.5pt; color: var(--muted); }
-  .step { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 12px 0; break-inside: avoid; }
+  .step { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 12px 0; }
   .step > .t { font-weight: 700; }
   .step > .t .n { display: inline-block; min-width: 54px; color: var(--accent); }
   .why, .warn, .ok, .note { border-radius: 6px; padding: 7px 10px; margin: 7px 0; font-size: 9.6pt; break-inside: avoid; }
@@ -51,7 +51,7 @@
 <div class="meta">Ad Soyad: ______________________ &nbsp;&nbsp; No: ________ &nbsp;&nbsp; Bilgisayar No: ________ &nbsp;&nbsp; Tarih: ____/____/______</div>
 
 <h2>Laboratuvar düzeni</h2>
-<p>Her bilgisayarda iki sistem vardır. <b>Windows</b> (ana bilgisayar), izlenecek sistemdir; buraya <b>Wazuh agent</b> kuracağız. <b>Ubuntu sanal makine</b> ise <b>Wazuh sunucusudur</b>: logları toplar, analiz eder ve web arayüzünü sunar.</p>
+<p>Bu uygulamada iki sistem kullanılır. <b>Windows</b> (ana bilgisayar), izlenecek sistemdir; buraya <b>Wazuh agent</b> kuracağız. <b>Wazuh sanal makinesi</b> (.ova dosyasından içe aktarılan hazır sunucu) ise logları toplar, analiz eder ve web arayüzünü sunar. Bilgisayardaki <b>Kali Linux</b> sanal makinesi bu uygulamada kullanılmaz; açıksa kapatın.</p>
 
 <svg viewBox="0 0 720 200" width="100%" role="img" aria-label="Laboratuvar topolojisi">
   <rect x="10" y="20" width="700" height="170" rx="12" fill="#f7f9fc" stroke="#d6dbe4"/>
@@ -62,7 +62,7 @@
   <text x="145" y="128" text-anchor="middle" font-size="11" fill="#1d2433">Tarayıcı (web arayüzü)</text>
   <text x="145" y="152" text-anchor="middle" font-size="10" fill="#5b6475">Olay günlükleri, dosyalar, ayarlar</text>
   <rect x="450" y="60" width="240" height="110" rx="10" fill="#fff" stroke="#1d6b3a" stroke-width="1.5"/>
-  <text x="570" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2433">Ubuntu sanal makine</text>
+  <text x="570" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2433">Wazuh sanal makinesi (OVA)</text>
   <text x="570" y="108" text-anchor="middle" font-size="11" fill="#1d2433">Wazuh Manager · Indexer</text>
   <text x="570" y="128" text-anchor="middle" font-size="11" fill="#1d2433">Wazuh Dashboard</text>
   <text x="570" y="152" text-anchor="middle" font-size="10" fill="#5b6475">IP: ___.___.___.___</text>
@@ -82,30 +82,36 @@
 <!-- ===================== BÖLÜM 0 ===================== -->
 <h2>Bölüm 0: Başlamadan önce kontroller</h2>
 
-<div class="step"><div class="t"><span class="n">Adım 0.1</span> Ubuntu sanal makineyi başlatın ve Wazuh servislerini kontrol edin.</div>
-<div class="where">Ubuntu terminali</div>
-<pre>sudo systemctl status wazuh-manager wazuh-indexer wazuh-dashboard --no-pager | grep -E "●|Active"</pre>
-<p class="ok">Üç servisin yanında da <code>active (running)</code> yazar.</p>
-<p class="why">Wazuh üç parçadan oluşur. <b>Manager</b> logları analiz eder, <b>Indexer</b> alarmları saklar ve aranabilir yapar, <b>Dashboard</b> ise tarayıcıdan gördüğümüz arayüzdür. Biri çalışmazsa ya agent bağlanamaz ya da arayüz boş görünür. Sanal makine yeni açıldıysa servislerin tam kalkması 1–2 dakika sürebilir.</p>
+<div class="step"><div class="t"><span class="n">Adım 0.1</span> Wazuh sanal makinesini başlatın, oturum açın ve servisleri kontrol edin.</div>
+<p>VirtualBox/VMware'de Wazuh sanal makinesini başlatın. Açılan siyah konsol ekranında kullanıcı adı <code>wazuh-user</code>, parola <code>wazuh</code> ile giriş yapın.</p>
+<p class="note">Konsolun klavye düzeni İngilizcedir (US), bu yüzden Türkçe klavyede bazı tuşlar farklı karakter yazar. Giriş yaptıktan sonra önce klavyeyi Türkçeye çevirin:</p>
+<pre>sudo loadkeys trq</pre>
+<p class="small">Komut çalışmazsa şu tuşları kullanın: <code>-</code> için 0'ın sağındaki <b>*</b> tuşu, <code>_</code> için <b>Shift + *</b>, <code>/</code> için sağ Shift'in solundaki <b>.</b> tuşu, <code>=</code> için Backspace'in solundaki <b>-</b> tuşu.</p>
+<div class="where">Wazuh sanal makinesi konsolu</div>
+<pre>sudo systemctl is-active wazuh-manager wazuh-indexer wazuh-dashboard</pre>
+<p class="ok">Alt alta üç kez <code>active</code> yazar.</p>
+<p class="why">Wazuh OVA dosyası, sunucunun tüm parçaları önceden kurulmuş hazır bir sanal makinedir. Wazuh üç parçadan oluşur. <b>Manager</b> logları analiz eder, <b>Indexer</b> alarmları saklar ve aranabilir yapar, <b>Dashboard</b> ise tarayıcıdan gördüğümüz arayüzdür. Biri çalışmazsa ya agent bağlanamaz ya da arayüz boş görünür. Sanal makine yeni açıldıysa servislerin tam kalkması 2–3 dakika sürebilir.</p>
 <p class="small">Çalışmayan servis varsa: <code>sudo systemctl restart wazuh-indexer wazuh-manager wazuh-dashboard</code></p>
 </div>
 
-<div class="step"><div class="t"><span class="n">Adım 0.2</span> Ubuntu'nun IP adresini ve Wazuh sürümünü öğrenin.</div>
-<div class="where">Ubuntu terminali</div>
-<pre>hostname -I
-sudo /var/ossec/bin/wazuh-control info | grep VERSION</pre>
+<div class="step"><div class="t"><span class="n">Adım 0.2</span> Wazuh sanal makinesinin IP adresini ve sürümünü öğrenin.</div>
+<div class="where">Wazuh sanal makinesi konsolu</div>
+<pre>ip -4 addr show
+sudo /var/ossec/bin/wazuh-control info</pre>
 <table><tr><th style="width:40%">Wazuh sunucu IP adresi</th><td class="blank">___.___.___.___</td></tr><tr><th>Wazuh sürümü</th><td class="blank">v4.___.___</td></tr></table>
-<p class="why">Agent'a "logları kime göndereceğini" bu IP ile söyleyeceğiz. Sürümü not ediyoruz, çünkü <b>agent sürümü sunucu sürümünden yeni olamaz</b>; yeni bir agent eski bir sunucuya bağlanamaz.</p>
+<p class="why">IP adresi <code>lo</code> dışındaki ağ kartının (ör. <code>eth0</code>) <code>inet</code> satırındadır; <code>127.0.0.1</code> değildir. Agent'a "logları kime göndereceğini" bu IP ile söyleyeceğiz. Sürümü not ediyoruz, çünkü <b>agent sürümü sunucu sürümünden yeni olamaz</b>; yeni bir agent eski bir sunucuya bağlanamaz.</p>
 </div>
 
-<div class="step"><div class="t"><span class="n">Adım 0.3</span> Ubuntu güvenlik duvarında gerekli portları açın.</div>
-<div class="where">Ubuntu terminali</div>
-<pre>sudo ufw status
-# "Status: active" görünüyorsa:
-sudo ufw allow 443/tcp
-sudo ufw allow 1514/tcp
-sudo ufw allow 1515/tcp</pre>
-<p class="why">Güvenlik duvarı açıksa ve bu portlara izin verilmemişse Windows'taki agent sunucuya ulaşamaz. "Status: inactive" görünüyorsa bu adımı atlayın.</p>
+<div class="step"><div class="t"><span class="n">Adım 0.3</span> Güvenlik duvarının portları engellemediğini kontrol edin.</div>
+<div class="where">Wazuh sanal makinesi konsolu</div>
+<pre>sudo systemctl is-active firewalld</pre>
+<p class="ok"><code>inactive</code> (ya da "Unit not found") yazar. Bu durumda bir şey yapmanıza gerek yoktur.</p>
+<p class="small"><code>active</code> yazıyorsa portları açın:</p>
+<pre>sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --permanent --add-port=1514/tcp
+sudo firewall-cmd --permanent --add-port=1515/tcp
+sudo firewall-cmd --reload</pre>
+<p class="why">Wazuh OVA sanal makinesi Ubuntu değil, Amazon Linux tabanlıdır; bu yüzden <code>ufw</code> yerine <code>firewalld</code> kullanılır. Güvenlik duvarı bu portları engellerse Windows'taki agent sunucuya ulaşamaz.</p>
 </div>
 
 <div class="step"><div class="t"><span class="n">Adım 0.4</span> Windows'tan sunucuya erişimi test edin.</div>
@@ -116,14 +122,14 @@ Test-NetConnection 192.168.56.101 -Port 443</pre>
 <p class="small">IP yerine Adım 0.2'de not ettiğiniz adresi yazın.</p>
 <p class="ok">Üç testte de <code>TcpTestSucceeded : True</code> yazar.</p>
 <p class="why">Kuruluma geçmeden ağ yolunun açık olduğundan emin oluyoruz. Kitaptaki uygulamada en sık yaşanan "agent kuruldu ama listede görünmüyor" sorununun nedeni neredeyse her zaman budur.</p>
-<p class="warn"><code>False</code> çıkıyorsa sanal makinenin ağ ayarı büyük olasılıkla <b>NAT</b>'tır. NAT modunda Windows sanal makineye doğrudan ulaşamaz. Öğretmeninize haber verin: ağ bağdaştırıcısının <b>Host-only</b> ya da <b>Köprü (Bridged)</b> olarak değiştirilmesi gerekir.</p>
+<p class="warn"><code>False</code> çıkıyorsa sorun büyük olasılıkla sanal makinenin ağ ayarıdır. VirtualBox'ta ağ bağdaştırıcısı <b>NAT</b> ise Windows sanal makineye ulaşamaz; ayar <b>Köprü (Bridged)</b> ya da <b>Host-only</b> yapılmalıdır. Ayar değişince sanal makineyi yeniden başlatın ve Adım 0.2'deki IP adresini tekrar okuyun, çünkü adres değişir.</p>
 </div>
 
 <!-- ===================== UYGULAMA 1 ===================== -->
 <h2 class="pb">Uygulama 1: Windows'a Wazuh agent kurulumu</h2>
 
 <div class="step"><div class="t"><span class="n">Adım 1</span> Wazuh web arayüzüne giriş yapın.</div>
-<p>Windows'ta tarayıcıyı açın ve adres çubuğuna <code>https://&lt;sunucu-IP&gt;</code> yazın. Kullanıcı adı <code>admin</code>; parolayı öğretmeninizden alın.</p>
+<p>Windows'ta tarayıcıyı açın ve adres çubuğuna <code>https://&lt;sunucu-IP&gt;</code> yazın. Kullanıcı adı <code>admin</code>, parola <code>admin</code>.</p>
 <p class="note">"Bağlantınız gizli değil" uyarısı çıkarsa <b>Gelişmiş → Siteye ilerle</b> seçeneğiyle devam edin.</p>
 <p class="why">Wazuh kurulumda kendi imzaladığı (self-signed) bir sertifika üretir. Bağlantı yine şifrelidir, ancak sertifika tanınmış bir kuruluşça imzalanmadığı için tarayıcı uyarı verir. Laboratuvar ortamında bu normaldir.</p>
 </div>
@@ -144,7 +150,7 @@ Test-NetConnection 192.168.56.101 -Port 443</pre>
 </div>
 
 <div class="step"><div class="t"><span class="n">Adım 5</span> Sunucu adresini ve agent adını girin.</div>
-<p><b>Server address</b> kutusuna Ubuntu'nun IP adresini yazın. <b>Optional settings</b> bölümünde <b>Assign an agent name</b> alanına benzersiz bir ad verin (örnek: <code>PC07-AYILMAZ</code>). Grup olarak <code>default</code> kalsın.</p>
+<p><b>Server address</b> kutusuna Wazuh sanal makinesinin IP adresini (Adım 0.2) yazın. <b>Optional settings</b> bölümünde <b>Assign an agent name</b> alanına benzersiz bir ad verin (örnek: <code>PC07-AYILMAZ</code>). Grup olarak <code>default</code> kalsın.</p>
 <p class="why">Agent adı, sunucunun bu bilgisayarı diğerlerinden ayırt etmesini sağlar ve kayıttan sonra <b>değiştirilemez</b>. Aynı ad iki kez kullanılırsa ikinci kayıt reddedilir. Türkçe karakter ve boşluk kullanmayın; yalnızca harf, rakam, <code>-</code> ve <code>_</code> güvenlidir.</p>
 </div>
 
@@ -157,7 +163,7 @@ Test-NetConnection 192.168.56.101 -Port 443</pre>
 <p>Komut aşağıdakine benzer olacaktır. <b>Kendiniz yazmayın, arayüzden kopyalayın.</b></p>
 <pre>Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-4.X.X-1.msi -OutFile $env:tmp\wazuh-agent; msiexec.exe /i $env:tmp\wazuh-agent /q WAZUH_MANAGER='192.168.56.101' WAZUH_AGENT_NAME='PC07-AYILMAZ'</pre>
 <p class="why">Komut iki iş yapar. <code>Invoke-WebRequest</code> kurulum paketini (MSI) Wazuh sitesinden indirir. <code>msiexec /q</code> ise paketi sessizce (pencere açmadan) kurar ve <code>WAZUH_MANAGER</code> ile <code>WAZUH_AGENT_NAME</code> değerlerini doğrudan agent ayarlarına yazar. Bu sayede kurulum biter bitmez agent sunucuyu tanır.</p>
-<p class="warn">Okul ağı internete çıkışı engelliyorsa indirme başarısız olur. Bu durumda öğretmeninizin dağıttığı MSI dosyasıyla kurun:</p>
+<p class="warn">Okul ağı internete çıkışı engelliyorsa indirme başarısız olur. Bu durumda <code>C:\Lab</code> klasörüne önceden kopyalanmış MSI dosyasıyla kurun:</p>
 <pre>msiexec.exe /i C:\Lab\wazuh-agent-4.X.X-1.msi /q WAZUH_MANAGER='192.168.56.101' WAZUH_AGENT_NAME='PC07-AYILMAZ'</pre>
 </div>
 
@@ -184,7 +190,7 @@ Get-Service WazuhSvc</pre>
 <table>
 <tr><th style="width:42%">Log'da görülen / Belirti</th><th>Neden ve çözüm</th></tr>
 <tr><td><code>Unable to connect to enrollment service</code> ya da <code>Unable to connect to '...':1514</code></td><td>Ağ yolu kapalı. Bölüm 0'daki Adım 0.3 ve 0.4'ü tekrar yapın.</td></tr>
-<tr><td><code>Duplicate agent name</code> / <code>Agent name already exists</code></td><td>Bu ad daha önce kullanılmış. Öğretmeniniz sunucudan eski kaydı silmeli ya da farklı bir adla yeniden kurmalısınız.</td></tr>
+<tr><td><code>Duplicate agent name</code> / <code>Agent name already exists</code></td><td>Bu ad daha önce kullanılmış. Agent'ı farklı bir adla (ör. sonuna <code>-2</code> ekleyerek) yeniden kurun.</td></tr>
 <tr><td><code>Agent version must be lower or equal to manager version</code></td><td>Agent sürümü sunucudan yeni. Sunucuyla aynı sürümdeki MSI'yı kurun.</td></tr>
 <tr><td>Listede <b>never connected</b> ya da <b>disconnected</b></td><td>Hizmet çalışmıyor olabilir: <code>Restart-Service WazuhSvc</code></td></tr>
 </table>
@@ -301,47 +307,7 @@ Remove-Item C:\LabFIM\gizli.txt</pre>
 </div>
 
 <h3>Uygulama sonu: Temizlik</h3>
-<p>Ders sonunda öğretmeniniz aksini söylemedikçe test klasörünü silin: <code>Remove-Item C:\LabFIM -Recurse</code>. Agent kurulu kalabilir; sonraki derste kullanılacaktır.</p>
-
-<!-- ===================== ÖĞRETMEN NOTU ===================== -->
-<h2 class="pb">Öğretmen notu: Kitaptaki uygulamaya göre değişenler</h2>
-<table>
-<tr><th style="width:24%">Kitap (s. 46–53)</th><th style="width:34%">Güncel durum (Wazuh 4.8 ve sonrası)</th><th>Föyde yapılan</th></tr>
-<tr><td>Wazuh → Agents</td><td>☰ → Agents management → Summary (Endpoints)</td><td>Menü yolu güncellendi</td></tr>
-<tr><td>Windows XP / 7+ ve mimari seçimi</td><td>Tek seçenek: WINDOWS → MSI 32/64 bits</td><td>Adım sadeleştirildi</td></tr>
-<tr><td>Komutta <code>wazuh-agent-4.5.4-1.msi</code></td><td>Sürüm, sunucu sürümüyle aynı olmalı; komut arayüzden kopyalanmalı</td><td>Sürüm kontrolü (Adım 0.2) eklendi</td></tr>
-<tr><td>8. Adım: Bilgisayarı yeniden başlatın</td><td>Gerekmiyor; hizmeti başlatmak yeterli</td><td>Kaldırıldı, <code>Get-Service</code> kontrolü eklendi</td></tr>
-<tr><td>Ağ ve güvenlik duvarı anlatılmıyor</td><td>Sanal makinede NAT kullanılıyorsa agent bağlanamaz</td><td>Bölüm 0 (port testi) eklendi</td></tr>
-<tr><td>10. Adım: win32ui.exe ile Authentication key</td><td>Anahtar otomatik alınıyor; yalnızca Manager IP yeterli</td><td>Sorun giderme bölümüne taşındı</td></tr>
-<tr><td>More → Security events</td><td>☰ → Threat intelligence → Threat Hunting</td><td>Menü yolu güncellendi</td></tr>
-<tr><td>Başarısız oturum açma (denetim ayarı anlatılmıyor)</td><td>Denetim ilkesi kapalıysa olay hiç oluşmaz</td><td>auditpol kontrolü eklendi (GUID ile, Türkçe Windows uyumlu)</td></tr>
-<tr><td>6. Adım: Dosya yükleme/silme ile FIM alarmı</td><td>Varsayılan ayarda kullanıcı klasörleri izlenmiyor</td><td>ossec.conf'a gerçek zamanlı izleme eklendi</td></tr>
-<tr><td>VirusTotal alarmları (görselde)</td><td>Sunucuda VirusTotal API anahtarıyla entegrasyon gerektirir</td><td>Föye alınmadı</td></tr>
-<tr><td>SCA / CIS kontrolleri</td><td>Modül adı: Configuration Assessment</td><td>Menü yolu güncellendi, inceleme adımı eklendi</td></tr>
-</table>
-
-<h3>Ders öncesi hazırlık listesi</h3>
-<table>
-<tr><th style="width:5%">✓</th><th>Kontrol</th></tr>
-<tr><td>☐</td><td>Ubuntu sanal makinelerin ağ bağdaştırıcısı <b>Host-only</b> ya da <b>Bridged</b> (NAT kullanılacaksa VirtualBox'ta 443, 1514 ve 1515 için port yönlendirme yapılmalı ve sunucu adresi olarak <code>127.0.0.1</code> girilmeli).</td></tr>
-<tr><td>☐</td><td>Sanal makineye en az 4 GB (tercihen 8 GB) RAM atanmış. Daha azında Indexer başlamayabilir ve arayüz boş görünür.</td></tr>
-<tr><td>☐</td><td>Öğrenci hesaplarında yönetici yetkisi var ya da kurulum için yönetici parolası hazır.</td></tr>
-<tr><td>☐</td><td><code>packages.wazuh.com</code> okul ağından erişilebilir. Erişilemiyorsa sunucu sürümüyle aynı MSI dosyası önceden indirilip <code>C:\Lab</code> klasörüne kopyalanmalı.</td></tr>
-<tr><td>☐</td><td>Dashboard <code>admin</code> parolası biliniyor. Kurulum asistanıyla kurulduysa: <code>sudo tar -O -xvf wazuh-install-files.tar wazuh-install-files/wazuh-passwords.txt</code></td></tr>
-<tr><td>☐</td><td>Bilgisayarlarda Deep Freeze vb. bir geri yükleme yazılımı varsa agent kurulumu yeniden başlatmada silinebilir; ders boyunca yeniden başlatma yaptırılmamalı.</td></tr>
-<tr><td>☐</td><td>Bilgisayarlar bir kez önceden denendiyse eski agent kayıtları silinmeli (aksi hâlde "duplicate name" hatası alınır): <code>sudo /var/ossec/bin/manage_agents -l</code> ile listeleyin, <code>sudo /var/ossec/bin/manage_agents -r &lt;ID&gt;</code> ile silin.</td></tr>
-</table>
-
-<h3>Önerilen süre planı (3 saat)</h3>
-<table>
-<tr><th style="width:25%">Süre</th><th>Bölüm</th></tr>
-<tr><td>20 dk</td><td>Bölüm 0: Kontroller ve port testi</td></tr>
-<tr><td>50 dk</td><td>Uygulama 1: Agent kurulumu ve doğrulama</td></tr>
-<tr><td>15 dk</td><td>Mola</td></tr>
-<tr><td>30 dk</td><td>Uygulama 2, Adım 1–6: Olay ekranı ve başarısız oturum açma</td></tr>
-<tr><td>35 dk</td><td>Uygulama 2, Adım 7–10: Dosya bütünlüğü izleme</td></tr>
-<tr><td>30 dk</td><td>Uygulama 2, Adım 11–12: CIS kontrolleri ve temizlik</td></tr>
-</table>
+<p>Ders sonunda test klasörünü silin: <code>Remove-Item C:\LabFIM -Recurse</code>. Agent kurulu kalabilir; sonraki derste kullanılacaktır.</p>
 
 </body>
 </html>
