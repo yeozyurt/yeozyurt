@@ -202,10 +202,19 @@ içindeki <b style="color:#e11d48">numaralar</b> tıklama sırasını gösterir.
     <li><span class="c">3</span> <b>Port Status</b> yanındaki <b>On</b> kutusunu işaretle (portu açar).</li>
     <li><span class="c">4</span> <b>IPv4 Address</b> kutusuna <code>192.168.10.1</code> yaz.</li>
     <li><span class="c">5</span> <b>Subnet Mask</b> kutusuna <code>255.255.255.192</code> yaz (kutuya tıklayınca kendiliğinden yazılan maskeyi düzelt!).</li>
-    <li>Sonra <b>GigabitEthernet0/1</b>'i seç ve aynısını yap: <b>On</b>, <code>192.168.10.65</code>, <code>255.255.255.192</code>.</li>
   </ol>
   <figure id="fig8"></figure>
-  <figcaption>Şekil 8 – R1 › Config › GigabitEthernet0/0 ayarları</figcaption>
+  <figcaption>Şekil 8 – R1 › Config › GigabitEthernet0/0 ayarları (Lab-1 tarafı)</figcaption>
+</div>
+<div class="step">
+  <p><b>Şimdi ikinci arayüz (Lab-2 tarafı):</b> <span class="c">2</span> soldaki listeden <b>GigabitEthernet0/1</b>'e tıkla, sonra <span class="c">3</span> <b>On</b>, <span class="c">4</span> <code>192.168.10.65</code>, <span class="c">5</span> <code>255.255.255.192</code> gir.</p>
+  <table>
+    <tr><th>Arayüz</th><th>Port Status</th><th>IPv4 Address</th><th>Subnet Mask</th><th>Bağlı olduğu LAN</th></tr>
+    <tr><td>GigabitEthernet0/0</td><td>On</td><td>192.168.10.1</td><td>255.255.255.192</td><td>Lab-1 (SW1)</td></tr>
+    <tr><td>GigabitEthernet0/1</td><td>On</td><td>192.168.10.65</td><td>255.255.255.192</td><td>Lab-2 (SW2)</td></tr>
+  </table>
+  <figure id="fig8b"></figure>
+  <figcaption>Şekil 8b – R1 › Config › GigabitEthernet0/1 ayarları (Lab-2 tarafı)</figcaption>
   <div class="box warn"><b>Dikkat:</b> Packet Tracer maskeyi otomatik olarak <b>255.255.255.0</b> yazar. Bu yanlıştır; /26 için <b>255.255.255.192</b> olmalı.</div>
 </div>
 
@@ -245,10 +254,33 @@ R1# write memory</pre>
     <li><span class="c">4</span> <b>IPv4 Address:</b> <code>192.168.10.10</code></li>
     <li><span class="c">5</span> <b>Subnet Mask:</b> <code>255.255.255.192</code></li>
     <li><span class="c">6</span> <b>Default Gateway:</b> <code>192.168.10.1</code></li>
-    <li>Pencereyi kapat (değerler anında kaydedilir). PC2, PC3 ve PC4 için adresleme tablosundaki değerlerle tekrarla.</li>
+    <li>Pencereyi kapat (değerler anında kaydedilir).</li>
   </ol>
   <figure id="fig11"></figure>
   <figcaption>Şekil 11 – PC1 › Desktop › IP Configuration</figcaption>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="num">10b</span>Diğer PC'leri yapılandır (PC2, PC3, PC4)</div>
+  <p>Her PC için aynı adımları izle: PC'ye tıkla → <b>Desktop</b> → <b>IP Configuration</b> → <b>Static</b> → değerleri gir.</p>
+  <table>
+    <tr><th>PC</th><th>LAN</th><th>IPv4 Address</th><th>Subnet Mask</th><th>Default Gateway</th></tr>
+    <tr><td>PC1</td><td>Lab-1</td><td>192.168.10.10</td><td>255.255.255.192</td><td>192.168.10.1</td></tr>
+    <tr><td>PC2</td><td>Lab-1</td><td>192.168.10.11</td><td>255.255.255.192</td><td>192.168.10.1</td></tr>
+    <tr><td>PC3</td><td>Lab-2</td><td>192.168.10.70</td><td>255.255.255.192</td><td>192.168.10.65</td></tr>
+    <tr><td>PC4</td><td>Lab-2</td><td>192.168.10.71</td><td>255.255.255.192</td><td>192.168.10.65</td></tr>
+  </table>
+  <div class="box warn"><b>Dikkat:</b> PC3 ve PC4 <b>Lab-2</b>'dedir; ağ geçitleri <b>192.168.10.65</b> olmalı, <b>192.168.10.1 değil!</b></div>
+  <figure id="fig11b"></figure>
+  <figcaption>Şekil 11b – PC2 › Desktop › IP Configuration (Lab-1)</figcaption>
+</div>
+<div class="step">
+  <figure id="fig11c"></figure>
+  <figcaption>Şekil 11c – PC3 › Desktop › IP Configuration (Lab-2)</figcaption>
+</div>
+<div class="step">
+  <figure id="fig11d"></figure>
+  <figcaption>Şekil 11d – PC4 › Desktop › IP Configuration (Lab-2)</figcaption>
 </div>
 
 <div class="step">
@@ -567,29 +599,31 @@ fill('fig7', mainWin({cat:3,subSet:'con',sub:0,list:'con',sel:2,
   marks: mark(380,168,20,'!') + mark(486,168,20,'!')
 }));
 // Şekil 8 – Router Config
-(function(){
+function routerCfg(id, gi, ip){
   const tabs=['Physical','Config','CLI','Attributes'];
   let b='';
   b+=`<rect x="58" y="84" width="170" height="420" fill="#f8fafc" stroke="#cbd5e1"/>`;
-  const items=[['GLOBAL',1],['Settings',0],['Algorithm Settings',0],['ROUTING',1],['Static',0],['RIP',0],['SWITCHING',1],['VLAN Database',0],['INTERFACE',1],['GigabitEthernet0/0',0,true],['GigabitEthernet0/1',0],['GigabitEthernet0/2',0]];
+  const items=[['GLOBAL',1],['Settings',0],['Algorithm Settings',0],['ROUTING',1],['Static',0],['RIP',0],['SWITCHING',1],['VLAN Database',0],['INTERFACE',1],['GigabitEthernet0/0',0,gi===0],['GigabitEthernet0/1',0,gi===1],['GigabitEthernet0/2',0,gi===2]];
   items.forEach((it,i)=>{ const y=104+i*26; if(it[2]) b+=`<rect x="60" y="${y-15}" width="166" height="22" fill="#bfdbfe"/>`; b+=t(it[1]?70:86,y,it[0],{fs:11,fw:it[1]?'bold':'normal',fill:it[1]?'#334155':'#111'}); });
   const X=245;
-  b+=t(540,104,'GigabitEthernet0/0',{a:'middle',fs:13,fw:'bold'});
+  b+=t(540,104,'GigabitEthernet0/'+gi,{a:'middle',fs:13,fw:'bold'});
   b+=t(X,140,'Port Status',{fs:11.5})+`<rect x="${X+150}" y="127" width="16" height="16" fill="#fff" stroke="#334155"/>`+`<path d="M${X+153} 135 l4 4 l7 -9" stroke="#16a34a" stroke-width="2.5" fill="none"/>`+t(X+172,140,'On',{fs:11.5});
   b+=t(X,172,'Bandwidth',{fs:11.5})+`<rect x="${X+150}" y="159" width="16" height="16" fill="#fff" stroke="#334155"/>`+`<path d="M${X+153} 167 l4 4 l7 -9" stroke="#334155" stroke-width="2" fill="none"/>`+t(X+172,172,'Auto',{fs:11.5});
   b+=t(X,204,'Duplex',{fs:11.5})+`<rect x="${X+150}" y="191" width="16" height="16" fill="#fff" stroke="#334155"/>`+`<path d="M${X+153} 199 l4 4 l7 -9" stroke="#334155" stroke-width="2" fill="none"/>`+t(X+172,204,'Auto',{fs:11.5});
   b+=field(X,220,'MAC Address','0001.C7A2.3B01',260);
   b+=t(X,272,'IP Configuration',{fs:11.5,fw:'bold'});
-  b+=field(X,284,'IPv4 Address','192.168.10.1',260);
+  b+=field(X,284,'IPv4 Address',ip,260);
   b+=field(X,318,'Subnet Mask','255.255.255.192',260);
   b+=t(X,370,'Tx Ring Limit',{fs:11.5})+`<rect x="${X+150}" y="356" width="60" height="22" fill="#fff" stroke="#94a3b8"/>`+t(X+158,371,'10',{fs:11.5});
   b+=t(X,410,'Equivalent IOS Commands',{fs:11,fw:'bold'})+`<rect x="${X}" y="416" width="595" height="86" fill="#0b1220"/>`;
-  ['R1(config)#interface GigabitEthernet0/0','R1(config-if)#no shutdown','R1(config-if)#ip address 192.168.10.1 255.255.255.192'].forEach((l,i)=>{ b+=t(X+8,436+i*18,l,{fs:10.5,fill:'#d1fae5',ff:'DejaVu Sans Mono, monospace'}); });
+  ['R1(config)#interface GigabitEthernet0/'+gi,'R1(config-if)#no shutdown','R1(config-if)#ip address '+ip+' 255.255.255.192'].forEach((l,i)=>{ b+=t(X+8,436+i*18,l,{fs:10.5,fill:'#d1fae5',ff:'DejaVu Sans Mono, monospace'}); });
   const svg=dialog('R1',tabs,1,b,'');
   // işaretler: tab konumu bilindikten sonra
   const tp=tabPos['Config'];
-  fill('fig8', svg.replace('</svg>', mark(tp[0],tp[1],18,'1',{rx:36,ry:16}) + mark(142,338,14,'2',{rx:86,ry:15}) + mark(X+168,135,16,'3',{rx:34,ry:16}) + mark(X+280,295,16,'4',{rx:140,ry:17}) + mark(X+280,329,16,'5',{rx:140,ry:17}) + '</svg>'));
-})();
+  fill(id, svg.replace('</svg>', mark(tp[0],tp[1],18,'1',{rx:36,ry:16}) + mark(142,338+gi*26,14,'2',{rx:86,ry:15}) + mark(X+168,135,16,'3',{rx:34,ry:16}) + mark(X+280,295,16,'4',{rx:140,ry:17}) + mark(X+280,329,16,'5',{rx:140,ry:17}) + '</svg>'));
+}
+routerCfg('fig8',0,'192.168.10.1');
+routerCfg('fig8b',1,'192.168.10.65');
 // Şekil 9 – CLI
 (function(){
   const tabs=['Physical','Config','CLI','Attributes'];
@@ -618,22 +652,26 @@ fill('fig7', mainWin({cat:3,subSet:'con',sub:0,list:'con',sel:2,
   fill('fig10', svg.replace('</svg>', mark(tp[0],tp[1],18,'1',{rx:40,ry:16}) + mark(130,142,44,'2',{rx:62,ry:48}) + '</svg>'));
 })();
 // Şekil 11 – IP Configuration
-(function(){
+function pcCfg(id, name, ip, gw){
   const tabs=['Physical','Config','Desktop','Programming','Attributes'];
   let b=`<rect x="80" y="86" width="740" height="410" fill="#fff" stroke="#64748b"/><rect x="80" y="86" width="740" height="24" fill="#e2e8f0"/>`+t(92,103,'IP Configuration',{fs:11.5,fw:'bold'})+t(808,103,'X',{fs:11.5,a:'middle'});
   b+=t(100,138,'Interface',{fs:11.5})+`<rect x="250" y="124" width="200" height="22" fill="#fff" stroke="#94a3b8"/>`+t(258,139,'FastEthernet0  ▾',{fs:11.5});
   b+=`<rect x="96" y="160" width="708" height="190" fill="none" stroke="#cbd5e1"/>`+t(104,176,'IP Configuration',{fs:11,fw:'bold'});
   b+=`<circle cx="114" cy="196" r="7" fill="#fff" stroke="#334155"/>`+t(128,200,'DHCP',{fs:11.5});
   b+=`<circle cx="214" cy="196" r="7" fill="#fff" stroke="#334155"/><circle cx="214" cy="196" r="3.5" fill="#111"/>`+t(228,200,'Static',{fs:11.5});
-  b+=field(104,214,'IPv4 Address','192.168.10.10',300);
+  b+=field(104,214,'IPv4 Address',ip,300);
   b+=field(104,246,'Subnet Mask','255.255.255.192',300);
-  b+=field(104,278,'Default Gateway','192.168.10.1',300);
+  b+=field(104,278,'Default Gateway',gw,300);
   b+=field(104,310,'DNS Server','0.0.0.0',300);
   b+=`<rect x="96" y="362" width="708" height="120" fill="none" stroke="#cbd5e1"/>`+t(104,378,'IPv6 Configuration',{fs:11,fw:'bold',fill:'#64748b'});
   b+=field(104,420,'IPv6 Address','',300).replace(/#94a3b8/,'#cbd5e1');
-  const svg=dialog('PC1',tabs,2,b);
-  fill('fig11', svg.replace('</svg>', mark(240,196,14,'3',{rx:40,ry:15}) + mark(404,225,13,'4',{rx:166,ry:13}) + mark(404,257,13,'5',{rx:166,ry:13}) + mark(404,289,13,'6',{rx:166,ry:13}) + '</svg>'));
-})();
+  const svg=dialog(name,tabs,2,b);
+  fill(id, svg.replace('</svg>', mark(240,196,14,'3',{rx:40,ry:15}) + mark(404,225,13,'4',{rx:166,ry:13}) + mark(404,257,13,'5',{rx:166,ry:13}) + mark(404,289,13,'6',{rx:166,ry:13}) + '</svg>'));
+}
+pcCfg('fig11','PC1','192.168.10.10','192.168.10.1');
+pcCfg('fig11b','PC2','192.168.10.11','192.168.10.1');
+pcCfg('fig11c','PC3','192.168.10.70','192.168.10.65');
+pcCfg('fig11d','PC4','192.168.10.71','192.168.10.65');
 // Şekil 12 – Command prompt
 (function(){
   const tabs=['Physical','Config','Desktop','Programming','Attributes'];
