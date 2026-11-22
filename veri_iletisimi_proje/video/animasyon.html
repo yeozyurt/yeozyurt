@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Kuantum Sonrası TLS – Proje Videosu</title>
+<style>
+  html, body { margin: 0; background: #0E1830; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+// Veriler video_olustur.js tarafından window.VERI olarak eklenir (yoksa varsayılan).
+const V = window.VERI || {n: 129, pq: 32, cdn_n: 31, cdn_k: 30, oz_n: 98, oz_k: 2, pq_yuzde: 24.8, tls12: 26.4,
+  sektor: [["Banka", 0], ["Kamu", 3], ["Üniversite", 17.9], ["E-ticaret", 80]], ch_k: 232, ch_h: 1534, ek: 2272};
+const C = document.getElementById("c"), X = C.getContext("2d");
+const W = 1920, H = 1080;
+const R = {laci: "#0E1830", laci2: "#18264A", laci3: "#22335A", yesil: "#1FB585", nane: "#9FE0C8", mavi: "#5B8DEF",
+  mercan: "#F06A45", amber: "#F2B544", beyaz: "#FFFFFF", gri: "#8D9AB3", acik: "#C9D3E6"};
+const F = "Inter, 'Inter Display', sans-serif";
+
+// ---- yardımcılar ---------------------------------------------------------------
+const kis = (v, a, b) => Math.max(a, Math.min(b, v));
+const ilerle = (t, a, b) => kis((t - a) / (b - a), 0, 1);          // 0..1
+const eo = x => 1 - Math.pow(1 - x, 3);                                  // easeOutCubic
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const lerp = (a, b, x) => a + (b - a) * x;
+function goster(t, a, b, g = .5) { return Math.min(eo(ilerle(t, a, a + g)), 1 - eo(ilerle(t, b - g, b))); }
+
+function yazi(m, x, y, boyut, renk, opak = 1, kalin = 600, hiza = "center", ls = 0) {
+  X.save(); X.globalAlpha = opak; X.fillStyle = renk; X.font = `${kalin} ${boyut}px ${F}`;
+  X.textAlign = hiza; X.textBaseline = "middle";
+  if (ls) X.letterSpacing = ls + "px";
+  X.fillText(m, x, y); X.restore();
+}
+function kutu(x, y, w, h, r, dolgu, opak = 1, cizgi = null, kal = 3) {
+  X.save(); X.globalAlpha = opak; X.beginPath(); X.roundRect(x, y, w, h, r);
+  if (dolgu) { X.fillStyle = dolgu; X.fill(); }
+  if (cizgi) { X.strokeStyle = cizgi; X.lineWidth = kal; X.stroke(); }
+  X.restore();
+}
+function daire(x, y, r, renk, opak = 1) { X.save(); X.globalAlpha = opak; X.beginPath(); X.arc(x, y, r, 0, 7); X.fillStyle = renk; X.fill(); X.restore(); }
+function cizgi(x1, y1, x2, y2, renk, kal = 3, opak = 1, kesik = null) {
+  X.save(); X.globalAlpha = opak; X.strokeStyle = renk; X.lineWidth = kal; if (kesik) X.setLineDash(kesik);
+  X.beginPath(); X.moveTo(x1, y1); X.lineTo(x2, y2); X.stroke(); X.restore();
+}
+function kilit(x, y, s, renk, opak = 1, kirik = 0) {
+  X.save(); X.globalAlpha = opak; X.translate(x, y);
+  X.strokeStyle = renk; X.lineWidth = s * .12; X.lineCap = "round";
+  X.beginPath(); X.arc(0, -s * .18 - kirik * s * .25, s * .28, Math.PI, 0); X.lineTo(s * .28, -s * .02 - kirik * s * .25); X.stroke();
+  X.beginPath(); X.moveTo(-s * .28, -s * .18); X.lineTo(-s * .28, -s * .02); X.stroke();
+  X.fillStyle = renk; X.beginPath(); X.roundRect(-s * .42, -s * .05, s * .84, s * .62, s * .1); X.fill();
+  X.fillStyle = R.laci; X.beginPath(); X.arc(0, s * .2, s * .08, 0, 7); X.fill();
+  X.restore();
+}
+function kafes(t, opak) {           // arka plan kafes (lattice) deseni
+  for (let i = 0; i < 26; i++) for (let j = 0; j < 15; j++) {
+    const x = 40 + i * 76, y = 40 + j * 76;
+    const dalga = .5 + .5 * Math.sin(t * 1.2 + i * .45 + j * .3);
+    daire(x, y, 2.4, R.laci3, opak * (.5 + .5 * dalga));
+  }
+}
+function paket(x, y, w, renk, etiket, opak = 1) {
+  kutu(x, y - 22, w, 44, 10, renk, opak);
+  if (etiket) yazi(etiket, x + w / 2, y, 20, R.laci, opak, 700);
+}
+
+// ---- site noktaları ızgarası --------------------------------------------------------
+function izgara(n, x0, y0, w, h) {
+  const sut = Math.ceil(Math.sqrt(n * w / h)), sat = Math.ceil(n / sut);
+  const ad = Math.min(w / sut, h / sat);
+  const pts = [];
+  for (let k = 0; k < n; k++) pts.push([x0 + (k % sut) * ad + ad / 2, y0 + Math.floor(k / sut) * ad + ad / 2, ad]);
+  return pts;
+}
+// Sabit, tekrarlanabilir "rastgele" sıra
+function karistir(n, tohum) { const a = [...Array(n).keys()]; let s = tohum;
+  for (let i = n - 1; i > 0; i--) { s = (s * 9301 + 49297) % 233280; const j = Math.floor(s / 233280 * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a; }
+
+// Site sınıfları: 0 = CDN+PQ, 1 = CDN PQ yok, 2 = kendi+PQ, 3 = kendi PQ yok
+const SINIF = []; for (let i = 0; i < V.cdn_k; i++) SINIF.push(0); for (let i = 0; i < V.cdn_n - V.cdn_k; i++) SINIF.push(1);
+for (let i = 0; i < V.oz_k; i++) SINIF.push(2); for (let i = 0; i < V.oz_n - V.oz_k; i++) SINIF.push(3);
+const SIRA = karistir(SINIF.length, 7);
+
+// =====================================================================================
+function render(t) {
+  X.fillStyle = R.laci; X.fillRect(0, 0, W, H);
+  kafes(t, .9);
+
+  // ---------- SAHNE 1: başlık (0–5.5) --------------------------------------------------
+  { const o = goster(t, 0, 5.5);
+    if (o > 0) {
+      yazi("VERİ İLETİŞİMİ · DÖNEM PROJESİ", W / 2, 330, 26, R.nane, o, 600, "center", 6);
+      const s1 = eo(ilerle(t, .3, 1.3)), s2 = eo(ilerle(t, .8, 1.8));
+      yazi("Türk web siteleri", W / 2, 470 + (1 - s1) * 30, 92, R.beyaz, o * s1, 700);
+      yazi("kuantum bilgisayarlara hazır mı?", W / 2, 590 + (1 - s2) * 30, 92, R.nane, o * s2, 700);
+      const s3 = eo(ilerle(t, 2.0, 2.8));
+      cizgi(W / 2 - 60 * s3, 690, W / 2 + 60 * s3, 690, R.yesil, 5, o);
+      yazi("Kuantum sonrası TLS · sektörel ölçüm · ağ maliyeti", W / 2, 750, 32, R.acik, o * s3, 400);
+    } }
+
+  // ---------- SAHNE 2: şimdi topla, sonra çöz (5.5–12) ---------------------------------
+  { const o = goster(t, 5.5, 12);
+    if (o > 0) {
+      yazi("\"Şimdi topla, sonra çöz\"", W / 2, 170, 64, R.beyaz, o, 700);
+      // istemci -> sunucu, paketler kayda alınıyor
+      kutu(260, 420, 240, 160, 24, R.laci3, o); yazi("Kullanıcı", 380, 500, 30, R.acik, o, 600);
+      kutu(1420, 420, 240, 160, 24, R.laci3, o); yazi("Banka", 1540, 500, 30, R.acik, o, 600);
+      cizgi(500, 500, 1420, 500, R.gri, 3, o * .6, [10, 10]);
+      for (let k = 0; k < 6; k++) {
+        const ph = ((t - 5.8) * .55 + k / 6) % 1; if (t < 5.8) continue;
+        const x = lerp(520, 1340, ph);
+        kutu(x, 482, 60, 36, 8, R.mavi, o * .95); kilit(x + 30, 500, 22, R.laci, o);
+        // kopya kayıt kutusuna düşer
+        if (ph > .45 && ph < .6) { const d = ilerle(ph, .45, .6); kutu(lerp(x, 930, d), lerp(482, 690, d), 60, 36, 8, R.mavi, o * (1 - d) * .8); }
+      }
+      kutu(840, 660, 240, 130, 20, null, o, R.mercan, 4); yazi("Saldırgan", 960, 705, 28, R.mercan, o, 700);
+      yazi("kaydediyor", 960, 748, 24, R.acik, o, 400);
+      // zaman çizgisi ve kırılma
+      const z = eo(ilerle(t, 8.2, 10.2));
+      cizgi(420, 900, lerp(420, 1500, z), 900, R.gri, 4, o);
+      yazi("2026", 420, 945, 26, R.acik, o, 600);
+      if (z > .98) { yazi("Kuantum bilgisayar", 1500, 945, 26, R.mercan, o, 700); }
+      const kir = eo(ilerle(t, 10.0, 10.8));
+      kilit(1500, 840, 70, kir > 0 ? R.mercan : R.mavi, o * (z > .95 ? 1 : 0), kir);
+      if (kir > 0) yazi("Bugünkü şifre yarın çözülür", W / 2, 1010, 34, R.mercan, o * kir, 700);
+    } }
+
+  // ---------- SAHNE 3: çözüm (12–17.5) ------------------------------------------------------
+  { const o = goster(t, 12, 17.5);
+    if (o > 0) {
+      yazi("Çözüm hazır: hibrit anahtar değişimi", W / 2, 190, 58, R.beyaz, o, 700);
+      const b = eio(ilerle(t, 12.8, 14.4));
+      const xs = lerp(520, 760, b), xm = lerp(1400, 1160, b);
+      kutu(xs - 180, 420, 360, 200, 28, R.mavi, o); yazi("X25519", xs, 495, 46, R.laci, o, 800);
+      yazi("klasik", xs, 555, 28, R.laci, o, 500);
+      kutu(xm - 180, 420, 360, 200, 28, R.yesil, o); yazi("ML-KEM-768", xm, 495, 46, R.laci, o, 800);
+      yazi("kuantum sonrası", xm, 555, 28, R.laci, o, 500);
+      const c = eo(ilerle(t, 14.3, 15.2));
+      if (c > 0) {
+        yazi("+", W / 2, 520, 70, R.beyaz, o * c, 800);
+        kutu(560, 700, 800, 130, 30, null, o * c, R.nane, 4);
+        yazi("X25519MLKEM768", W / 2, 765, 56, R.nane, o * c, 800);
+        yazi("Biri kırılsa bile diğeri korur · NIST FIPS 203 · tarayıcılarda varsayılan", W / 2, 900, 30, R.acik, o * c, 400);
+      }
+    } }
+
+  // ---------- SAHNE 4: yöntem + site ızgarası (17.5–24) --------------------------------------
+  const nokta = izgara(SINIF.length, 820, 230, 980, 720);
+  { const o = goster(t, 17.5, 24.2, .4);
+    if (o > 0) {
+      yazi("Ölçtüm: " + V.n + " site, " + V.sektor.length + " kritik sektör", 520, 170, 52, R.beyaz, o, 700, "left");
+      const steps = [["Dizüstü bilgisayar", "Python + OpenSSL"], ["Ev interneti", "TCP / TLS 1.3"], ["Her siteye 5 bağlantı", "+ Wireshark doğrulama"]];
+      steps.forEach((s, i) => { const a = eo(ilerle(t, 17.9 + i * .4, 18.6 + i * .4));
+        kutu(120, 300 + i * 200, 560, 150, 24, R.laci3, o * a);
+        yazi(s[0], 400, 355 + i * 200, 34, R.beyaz, o * a, 700); yazi(s[1], 400, 405 + i * 200, 26, R.acik, o * a, 400);
+        if (i < 2) cizgi(400, 452 + i * 200, 400, 498 + i * 200, R.gri, 3, o * a); });
+      const sayi = Math.round(V.n * eo(ilerle(t, 19.2, 22.5)));
+      nokta.forEach((p, k) => { const g = ilerle(t, 19.2 + SIRA.indexOf(k) / SINIF.length * 3.3, 19.5 + SIRA.indexOf(k) / SINIF.length * 3.3);
+        daire(p[0], p[1], p[2] * .32 * eo(g), R.acik, o * .9); });
+      yazi(sayi + " / " + V.n, 1310, 1000, 40, R.nane, o, 700);
+    } }
+
+  // ---------- SAHNE 5: bulgu 1 (24–31) --------------------------------------------------------
+  { const o = goster(t, 24, 31.2, .4);
+    if (o > 0) {
+      const boya = eo(ilerle(t, 24.2, 25.6));
+      nokta.forEach((p, k) => { const s = SINIF[k]; const hazir = s === 0 || s === 2;
+        daire(p[0], p[1], p[2] * .32, hazir ? R.yesil : R.acik, o * (hazir ? 1 : lerp(.9, .35, boya))); });
+      const y = eo(ilerle(t, 24.6, 26.0));
+      yazi("%" + (V.pq_yuzde * y).toFixed(1).replace(".", ","), 450, 330, 150, R.yesil, o * y, 800);
+      yazi("site kuantum sonrası hazır", 450, 445, 34, R.acik, o * y, 500);
+      V.sektor.forEach((s, i) => { const a = eo(ilerle(t, 26.4 + i * .35, 27.6 + i * .35));
+        const ara = Math.min(95, 440 / V.sektor.length), yy = 590 + i * ara;
+        yazi(s[0], 110, yy, 30, R.acik, o, 600, "left");
+        kutu(330, yy - 22, 420, 44, 22, R.laci3, o);
+        kutu(330, yy - 22, Math.max(8, 420 * s[1] / 100 * a), 44, 22, s[1] < 10 ? R.mercan : R.yesil, o);
+        yazi("%" + Math.round(s[1] * a), 800, yy, 30, s[1] < 10 ? R.mercan : R.yesil, o * a, 800, "left"); });
+    } }
+
+  // ---------- SAHNE 6: bulgu 2 – CDN (31–37.5) ------------------------------------------------
+  { const o = goster(t, 31, 37.5, .4);
+    if (o > 0) {
+      const a = eio(ilerle(t, 31.2, 32.8));
+      const solN = V.cdn_n, sol = izgara(solN, 150, 330, 620, 520), sag = izgara(V.oz_n, 1000, 330, 780, 520);
+      let ci = 0, oi = 0;
+      nokta.forEach((p, k) => { const s = SINIF[k]; const hedef = s < 2 ? sol[ci++] : sag[oi++];
+        const x = lerp(p[0], hedef[0], a), y = lerp(p[1], hedef[1], a), r = lerp(p[2], hedef[2], a) * .32;
+        daire(x, y, Math.min(r, 14), (s === 0 || s === 2) ? R.yesil : R.acik, o * ((s === 0 || s === 2) ? 1 : .45)); });
+      const b = eo(ilerle(t, 32.8, 33.8));
+      yazi("CDN arkasında", 460, 250, 40, R.beyaz, o * b, 700);
+      yazi("Kendi sunucusu", 1390, 250, 40, R.beyaz, o * b, 700);
+      yazi("%" + (100 * V.cdn_k / V.cdn_n).toFixed(1).replace(".", ","), 460, 920, 96, R.yesil, o * b, 800);
+      yazi("%" + (100 * V.oz_k / V.oz_n).toFixed(1).replace(".", ","), 1390, 920, 96, R.mercan, o * b, 800);
+      const c = eo(ilerle(t, 34.4, 35.2));
+      kutu(460, 70, 1000, 100, 50, R.laci3, o * c);
+      yazi("Belirleyici sektör değil, altyapı", W / 2, 120, 44, R.nane, o * c, 700);
+    } }
+
+  // ---------- SAHNE 7: ağ maliyeti (37.5–44) --------------------------------------------------
+  { const o = goster(t, 37.5, 44, .4);
+    if (o > 0) {
+      yazi("Bedeli: ilk mesaj iki pakete bölünüyor", W / 2, 160, 56, R.beyaz, o, 700);
+      const olc = 1100 / 1600, x0 = 360;
+      yazi("Klasik", x0 - 30, 380, 32, R.acik, o, 600, "right");
+      kutu(x0, 350, V.ch_k * olc, 60, 12, R.mavi, o); yazi(V.ch_k + " B", x0 + V.ch_k * olc + 20, 380, 30, R.mavi, o, 700, "left");
+      const g = eo(ilerle(t, 38.4, 40.0));
+      const L = lerp(V.ch_k, V.ch_h, g) * olc;
+      yazi("Hibrit", x0 - 30, 520, 32, R.acik, o, 600, "right");
+      kutu(x0, 490, L, 60, 12, R.yesil, o); yazi(Math.round(lerp(V.ch_k, V.ch_h, g)) + " B", x0 + L + 20, 520, 30, R.yesil, o, 700, "left");
+      const sx = x0 + 1460 * olc;
+      cizgi(sx, 300, sx, 600, R.mercan, 4, o, [14, 10]); yazi("1 TCP paketi = 1460 B", sx, 280, 24, R.mercan, o, 700);
+      const p = eo(ilerle(t, 40.4, 41.6));
+      if (p > 0) {   // iki paket kablo üzerinde ilerler
+        cizgi(300, 760, 1620, 760, R.gri, 3, o * p, [8, 10]);
+        const ilk = lerp(300, 1180, p);
+        paket(ilk, 760, 300, R.yesil, "Paket 1 · 1460 B", o * p);
+        paket(ilk - 130 - 20, 760, 120, R.amber, "Paket 2", o * p);
+      }
+      const q = eo(ilerle(t, 41.6, 42.4));
+      yazi("+" + (V.ek / 1000).toFixed(1).replace(".", ",") + " KB her bağlantıda  ·  kayıplı ağda daha yavaş", W / 2, 920, 36, R.nane, o * q, 600);
+    } }
+
+  // ---------- SAHNE 8: kapanış (44–49) ---------------------------------------------------------
+  { const o = goster(t, 44, 49.6, .6);
+    if (o > 0) {
+      const a = eo(ilerle(t, 44.3, 45.3)), b = eo(ilerle(t, 45.2, 46.2)), c = eo(ilerle(t, 46.4, 47.2));
+      yazi("Geçiş başladı —", W / 2, 400, 72, R.beyaz, o * a, 700);
+      yazi("ama kurumlar değil, CDN'ler sayesinde.", W / 2, 500, 72, R.nane, o * b, 700);
+      cizgi(W / 2 - 60, 600, W / 2 + 60, 600, R.yesil, 5, o * c);
+      yazi("Rümeysa Betül Özyurt · Veri İletişimi (BİL321)", W / 2, 680, 32, R.acik, o * c, 500);
+      yazi("İstanbul Ticaret Üniversitesi · 2026", W / 2, 730, 28, R.gri, o * c, 400);
+    } }
+}
+window.render = render;
+window.SURE = 49.6;
+// Tarayıcıda açıldığında canlı önizleme
+if (!window.KAYIT) { const t0 = performance.now(); (function d() { render(((performance.now() - t0) / 1000) % window.SURE); requestAnimationFrame(d); })(); }
+</script>
+</body>
+</html>
