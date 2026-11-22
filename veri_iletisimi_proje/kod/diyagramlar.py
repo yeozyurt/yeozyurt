@@ -12,6 +12,13 @@ from matplotlib.patches import FancyBboxPatch
 KLASOR = sys.argv[1] if len(sys.argv) > 1 else "../sekiller"
 os.makedirs(KLASOR, exist_ok=True)
 plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10})
+import json
+_R = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "analiz", "ek_analiz.json"), encoding="utf-8"))
+N_LISTE, N_SEKTOR = _R["liste_boyutu"], len(_R["sektor"]) - 1
+CDN_N = int(_R["cdn_fisher"]["cdn"].split("/")[1]); OZ_N = int(_R["cdn_fisher"]["kendi"].split("/")[1])
+_cs = sorted(_R["cdn_saglayicilar"].items(), key=lambda x: -x[1])
+CDN_METIN = "\n".join(" · ".join(f"{k} {v}" for k, v in _cs[i:i + 2]) for i in range(0, len(_cs), 2))
+HRR_N = len(_R["hrr"]); CH_T = int(_R["ag"]["tarayici_ch_medyan"])
 
 C = dict(pq="#1b7f5a", pqa="#d9efe6", kl="#4a78c2", kla="#dfe8f6", tur="#c75b39", tura="#f7e1d8",
          gri="#8a8f98", gria="#eceef1", koyu="#22262e", sari="#f3e7c4")
@@ -44,11 +51,11 @@ ax.set_xlim(0, 11); ax.set_ylim(0, 5.6); ax.axis("off")
 ax.text(0.1, 5.35, "GÖNDERİCİ / ÖLÇÜM İSTEMCİSİ", fontsize=9, color=C["gri"], fontweight="bold")
 ax.text(4.35, 5.35, "İLETİM KANALI", fontsize=9, color=C["gri"], fontweight="bold")
 ax.text(7.55, 5.35, "ALICI / SUNUCU TARAFI", fontsize=9, color=C["gri"], fontweight="bold")
-kutu(ax, 0.1, 4.2, 2.2, 0.8, "siteler.csv\n(130 alan adı, 4 sektör)", "sari")
+kutu(ax, 0.1, 4.2, 2.2, 0.8, f"siteler_500.csv\n({N_LISTE} alan adı, {N_SEKTOR} sektör)", "sari")
 kutu(ax, 0.1, 2.35, 2.2, 1.45, "olcum.py (Python 3)\nDNS → TCP RTT →\n5 bağlantı senaryosu\n→ HTTP başlıkları", "kla",
      kalin=False)
 kutu(ax, 2.45, 2.35, 1.5, 1.45, "OpenSSL\n4.0.3\ns_client", "pqa")
-kutu(ax, 0.1, 0.35, 2.2, 0.8, "sonuclar_1/2.csv\n(34 sütun/site)", "sari")
+kutu(ax, 0.1, 0.35, 2.2, 0.8, "sonuclar_1/2/3.csv\n(34 sütun/site)", "sari")
 kutu(ax, 2.45, 0.35, 1.5, 0.8, "analiz.py\nanaliz_ek.py", "kla")
 kutu(ax, 2.45, 4.2, 1.5, 0.8, "Wireshark 4.6.8\n(paket yakalama)", "gria")
 ok(ax, 1.2, 4.2, 1.2, 3.8)
@@ -61,12 +68,12 @@ kutu(ax, 4.35, 2.35, 2.6, 1.45, "Ev internet bağlantısı (TR)\nWi-Fi → modem
      "gria")
 ok(ax, 3.95, 3.07, 4.35, 3.07, cift=True)
 # sunucu tarafı
-kutu(ax, 7.55, 3.8, 1.75, 1.35, "CDN uç sunucusu\nCloudflare 21\nCloudFront 5\nAkamai 4 · Imperva 1", "pqa", fs=8.5)
+kutu(ax, 7.55, 3.8, 1.75, 1.35, f"CDN uç sunucusu ({CDN_N})\n{CDN_METIN}", "pqa", fs=7.5)
 kutu(ax, 9.5, 3.95, 1.4, 1.05, "Kurumun kaynak\nsunucusu (origin)", "gria", fs=8.5)
-kutu(ax, 7.55, 1.5, 3.35, 1.05, "Kendi sunucusunu işleten kurum (98 site)\nTLS, kurumun kendi web sunucusunda\n"
+kutu(ax, 7.55, 1.5, 3.35, 1.05, f"Kendi sunucusunu işleten kurum ({OZ_N} site)\nTLS, kurumun kendi web sunucusunda\n"
      "sonlanır (Apache, nginx, IIS, BIG-IP)", "kla", fs=8.5)
-ok(ax, 6.95, 3.3, 7.55, 4.35, metin="n = 31", renk="pq", dx=-0.25, dy=0.05)
-ok(ax, 6.95, 2.8, 7.55, 2.1, metin="n = 98", renk="kl", dx=-0.25, dy=-0.32)
+ok(ax, 6.95, 3.3, 7.55, 4.35, metin=f"n = {CDN_N}", renk="pq", dx=-0.25, dy=0.05)
+ok(ax, 6.95, 2.8, 7.55, 2.1, metin=f"n = {OZ_N}", renk="kl", dx=-0.25, dy=-0.32)
 ok(ax, 9.3, 4.47, 9.5, 4.47, ls="--", renk="gri")
 ax.text(9.4, 3.72, "ölçülemez\n(dışarıdan görünmez)", ha="center", fontsize=7.5, color=C["gri"], va="top")
 ax.text(9.2, 0.85, "Ölçülen: TLS sürümü · seçilen grup · HRR · sertifika\nClientHello/ServerHello baytı · segment · RTT · Alt-Svc",
@@ -99,7 +106,7 @@ mesaj(ax, 9.1, 8.6, True, "TCP SYN", "gri")
 mesaj(ax, 8.4, 7.9, False, "TCP SYN/ACK", "gri")
 mesaj(ax, 7.7, 7.2, True, "TCP ACK", "gri")
 ax.text(9.3, 8.4, "1 RTT\n(TCP)", fontsize=8, color=C["gri"], va="center")
-mesaj(ax, 6.9, 6.25, True, "ClientHello  ≈1534 B → 2 TCP segmenti\nkey_share: X25519MLKEM768 (1216 B) + X25519 (32 B)",
+mesaj(ax, 6.9, 6.25, True, f"ClientHello  ≈{CH_T} B → 2 TCP segmenti\nkey_share: X25519MLKEM768 (1216 B) + X25519 (32 B)",
       "pq")
 mesaj(ax, 6.0, 5.3, False, "ServerHello 1210 B  [key_share: 1088 B ML-KEM şifre metni + 32 B]\n"
       "{EncryptedExtensions, Certificate, CertVerify, Finished}", "pq")
@@ -119,7 +126,7 @@ mesaj(ax, 8.2, 7.6, False, "HelloRetryRequest  [grup: P-256]", "tur")
 mesaj(ax, 7.3, 6.7, True, "ClientHello (2.)  [pay: P-256]", "kl")
 mesaj(ax, 6.4, 5.8, False, "ServerHello + {…Finished}", "kl")
 mesaj(ax, 5.5, 4.9, True, "{Finished} + HTTP", "kl")
-ax.text(5, 3.6, "Ölçümde 1 banka sitesi bu davranışı gösterdi:\nher bağlantıda +1 RTT ≈ +20 ms", ha="center",
+ax.text(5, 3.6, f"Ölçümde {HRR_N} site bu davranışı gösterdi:\nher bağlantıda +1 RTT ≈ +20 ms", ha="center",
         fontsize=8.8, color=C["tur"], bbox=dict(fc=C["tura"], ec=C["tur"], boxstyle="round,pad=0.4"))
 fig.tight_layout()
 kaydet(fig, "diyagram_tls13_sira.png")

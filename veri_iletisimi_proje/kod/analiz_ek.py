@@ -24,17 +24,31 @@ from collections import Counter, defaultdict
 
 from scipy import stats
 
-SEKTOR_AD = {"Banka": "Banka", "Kamu": "Kamu", "Universite": "Üniversite", "ETicaret": "E-ticaret"}
-SEKTOR_SIRA = ["Banka", "Kamu", "Universite", "ETicaret"]
+import ipaddress
 
-# HTTP başlıklarıyla tanınamayan ancak IP adresi bilinen CDN bloklarında olan siteler
-# (makaledeki sınıflandırma ile aynı). Gerekçe yorum olarak verilmiştir.
-CDN_IP_DUZELTME = {
-    "www.defacto.com.tr": "Akamai",   # 195.175.179.0/24: aynı blokta www.lcw.com 'akamaighost' döndürüyor
-    "www.beymen.com": "Imperva",      # 45.223.0.0/16 Imperva (Incapsula) adres bloğu
+SEKTOR_AD = {"Banka": "Banka", "SigortaFinans": "Sigorta ve finans", "Kamu": "Kamu", "Saglik": "Sağlık",
+             "Altyapi": "Kritik altyapı", "Universite": "Üniversite", "ETicaret": "E-ticaret"}
+SEKTOR_SIRA = list(SEKTOR_AD)
+
+# HTTP başlığıyla tanınamayan siteler için yalnızca iyi bilinen CDN adres blokları kullanılır.
+CDN_BLOKLARI = {
+    "Cloudflare": ["104.16.0.0/13", "104.24.0.0/14", "172.64.0.0/13", "162.158.0.0/15", "141.101.64.0/18",
+                   "108.162.192.0/18", "188.114.96.0/20", "190.93.240.0/20", "198.41.128.0/17"],
+    "Akamai": ["2.16.0.0/13", "23.32.0.0/11", "23.192.0.0/11"],
+    "Fastly": ["151.101.0.0/16", "146.75.0.0/16", "199.232.0.0/16"],
+    "Imperva": ["45.223.0.0/16", "45.60.0.0/16"],
 }
-# 1. turda HTTP isteği hata verdiği için başlık alınamayan siteler: 2. turdaki
-# başlık bilgisi kullanılır (IP ve TLS sonuçları iki turda aynıdır).
+_AGLAR = [(ad, ipaddress.ip_network(b)) for ad, bl in CDN_BLOKLARI.items() for b in bl]
+# Ekim turundaki tek istisna: Akamai'nin ISS içi düğümü (aynı blokta www.lcw.com 'akamaighost' döndürüyor)
+CDN_ALAN_DUZELTME = {"www.defacto.com.tr": "Akamai"}
+
+
+def ip_cdn(ip):
+    try:
+        a = ipaddress.ip_address(ip)
+    except ValueError:
+        return None
+    return next((ad for ad, ag in _AGLAR if a.version == ag.version and a in ag), None)
 
 
 def evet(x):
@@ -53,19 +67,28 @@ def yukle(yol):
         return [r for r in csv.DictReader(f)]
 
 
-def cdn_tamamla(tur1, tur2):
-    t2 = {r["alan_adi"]: r for r in tur2}
-    for tur in (tur1, tur2):
+def cdn_tamamla(*turlar):
+    """Başlıkla tanınamayan CDN'leri IP bloklarından tamamlar; HTTP hatası nedeniyle başlığı boş kalan
+    siteler için aynı IP'yi kullanan başka turun başlık bilgisini kullanır."""
+    for tur in turlar:
+        diger = {r["alan_adi"]: r for t in turlar if t is not tur for r in t}
         for r in tur:
             if r["durum"] != "tamam":
                 continue
-            if r["cdn"] == "" and r["alan_adi"] in t2:
-                r["cdn"] = t2[r["alan_adi"]]["cdn"]
-                r["_cdn_kaynak"] = "2. tur başlığı"
-            if r["alan_adi"] in CDN_IP_DUZELTME:
-                r["cdn"] = CDN_IP_DUZELTME[r["alan_adi"]]
-                r["_cdn_kaynak"] = "IP bloğu"
+            if r["cdn"] == "" and r["alan_adi"] in diger and diger[r["alan_adi"]]["ip"] == r["ip"] \
+                    and diger[r["alan_adi"]]["cdn"]:
+                r["cdn"] = diger[r["alan_adi"]]["cdn"]; r["_cdn_kaynak"] = "diğer tur başlığı"
+            if r["cdn"] in ("", "Yok/Bilinmiyor"):
+                ad = ip_cdn(r["ip"]) or (CDN_ALAN_DUZELTME.get(r["alan_adi"]) if r["ip"].startswith("195.175.179.") else None)
+                if ad:
+                    r["cdn"] = ad; r["_cdn_kaynak"] = "IP bloğu"
             r["_cdnli"] = r["cdn"] not in ("", "Yok/Bilinmiyor")
+
+
+def ust_p(p):
+    """p değerini '10⁻⁷³' biçiminde üst sınır olarak yazar."""
+    us = math.floor(math.log10(p)) + 1 if p > 0 else -300
+    return "10" + str(us).translate(str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹"))
 
 
 def wilson(k, n, z=1.96):
@@ -226,7 +249,8 @@ def grafikler(ozet, ok, tur1, tur2, sim20, klasor):
         ax.text(i + 0.08, d + 3, f"%{d:.1f}".replace(".", ","), fontsize=11, fontweight="bold")
     ax.set_ylim(0, 110)
     ax.set_ylabel("Kuantum sonrası destek (%)")
-    ax.set_title("Fisher kesin testi: p < 10⁻²⁵", fontsize=10)
+    p_ = stats.fisher_exact([[a, len(cdn) - a], [b, len(oz) - b]])[1]
+    ax.set_title(f"Fisher kesin testi: p < {ust_p(p_)}", fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(klasor, "sekil_cdn_etkisi.png"), dpi=220)
     plt.close(fig)
@@ -283,7 +307,8 @@ def grafikler(ozet, ok, tur1, tur2, sim20, klasor):
                     color=renk, label=ad)
         axs[1].plot([100 * r["kayip"] for r in g], [100 * r["gecikme_olasiligi"] for r in g], ls, marker="o",
                     ms=4, color=renk, label=ad + " (simülasyon)")
-    for ch, sf, ls in ((1, 4, ":"), (2, 4, "-.")):
+    seg = {r["senaryo"]: (r["ch_seg"], r["sf_seg"]) for r in sim20}
+    for (ch, sf), ls in ((seg["Klasik"], ":"), (seg["Hibrit (tarayıcı)"], "-.")):
         xs = [i / 10 for i in range(0, 101)]
         axs[1].plot(xs, [100 * (1 - (1 - x / 100) ** (2 + ch + sf)) for x in xs], ls, color="black", lw=0.9,
                     label=f"Analitik 1−(1−p)^{2 + ch + sf}")
@@ -312,10 +337,17 @@ def main():
 
     tur1 = yukle(os.path.join(a.veri, "sonuclar_1.csv"))
     tur2 = yukle(os.path.join(a.veri, "sonuclar_2.csv"))
+    tur3 = yukle(os.path.join(a.veri, "sonuclar_3.csv"))
     cdn_tamamla(tur1, tur2)
-    ok = [r for r in tur2 if r["durum"] == "tamam"]  # ana analiz: 2. tur (1. turla aynı sonuç)
+    cdn_tamamla(tur3)
+    ok = [r for r in tur3 if r["durum"] == "tamam"]   # ana analiz: 3. tur (500 site, Kasım 2026)
     ok1 = [r for r in tur1 if r["durum"] == "tamam"]
-    R = {}
+    ok2 = [r for r in tur2 if r["durum"] == "tamam"]
+    R = {"liste_boyutu": len(tur3), "durumlar": dict(Counter(r["durum"] for r in tur3)),
+         "olcum_zamani": [min(r["olcum_zamani"] for r in tur3 if r["olcum_zamani"]),
+                          max(r["olcum_zamani"] for r in tur3 if r["olcum_zamani"])],
+         "olculemeyen": [(r["sektor"], r["durum"]) for r in tur3 if r["durum"] != "tamam"],
+         "tur_bilgisi": "1. tur 7 Eki · 2. tur 8 Eki · 3. tur 22 Kas 2026"}
 
     # 1) Sektör özetleri
     R["sektor"] = sektor_ozeti(ok)
@@ -380,24 +412,51 @@ def main():
         sure_farki_medyan_tur2=med_fark(ikili, "pq_sure_ms", "klasik_sure_ms"),
         sure_farki_medyan_tur1=med_fark([r for r in ok1 if evet(r["pq_destek"])], "pq_sure_ms", "klasik_sure_ms"),
         rtt_medyan_tur1=st.median(sayi(r["tcp_rtt_ms"]) for r in ok1),
-        rtt_medyan_tur2=st.median(sayi(r["tcp_rtt_ms"]) for r in ok),
+        rtt_medyan_tur2=st.median(sayi(r["tcp_rtt_ms"]) for r in ok2),
+        rtt_medyan_tur3=st.median(sayi(r["tcp_rtt_ms"]) for r in ok),
         rtt_medyan_cdn=st.median(sayi(r["tcp_rtt_ms"]) for r in cdn),
         rtt_medyan_kendi=st.median(sayi(r["tcp_rtt_ms"]) for r in oz),
     )
     # Wilcoxon işaretli sıra testi: hibrit - klasik süre farkı (tur 2)
     farklar = [sayi(r["pq_sure_ms"]) - sayi(r["klasik_sure_ms"]) for r in ikili]
     R["ag"]["sure_wilcoxon_p"] = stats.wilcoxon(farklar).pvalue
-    # Tur tutarlılığı
+    # Tur tutarlılığı (Ekim: 1. ve 2. tur, 130 site)
     t1 = {r["alan_adi"]: r for r in ok1}
-    ayni = sum(1 for r in ok if r["alan_adi"] in t1 and all(
+    ayni = sum(1 for r in ok2 if r["alan_adi"] in t1 and all(
         r[k] == t1[r["alan_adi"]][k] for k in ("tls_surumu", "pq_destek", "secilen_grup", "hrr_var",
                                                  "tls12_kabul", "sertifika_anahtar", "sertifika_bit")))
-    ip_degisen = sum(1 for r in ok if r["alan_adi"] in t1 and r["ip"] != t1[r["alan_adi"]]["ip"])
-    x = [sayi(t1[r["alan_adi"]]["tcp_rtt_ms"]) for r in ok]
-    y = [sayi(r["tcp_rtt_ms"]) for r in ok]
-    R["tutarlilik"] = dict(ayni_site=ayni, toplam=len(ok), ip_degisen=ip_degisen,
+    ip_degisen = sum(1 for r in ok2 if r["alan_adi"] in t1 and r["ip"] != t1[r["alan_adi"]]["ip"])
+    x = [sayi(t1[r["alan_adi"]]["tcp_rtt_ms"]) for r in ok2]
+    y = [sayi(r["tcp_rtt_ms"]) for r in ok2]
+    R["tutarlilik"] = dict(ayni_site=ayni, toplam=len(ok2), ip_degisen=ip_degisen,
                            rtt_pearson=round(stats.pearsonr(x, y)[0], 2),
                            rtt_ort_mutlak_fark=round(st.fmean(abs(a_ - b_) for a_, b_ in zip(x, y)), 1))
+    # Zaman içi değişim (Ekim 2. tur → Kasım 3. tur; iki turda da ölçülen siteler)
+    t3 = {r["alan_adi"]: r for r in ok}
+    ortak = [r for r in ok2 if r["alan_adi"] in t3]
+    degisim = []
+    for r in ortak:
+        y_ = t3[r["alan_adi"]]
+        if (r["pq_destek"], r["tls_surumu"]) != (y_["pq_destek"], y_["tls_surumu"]):
+            degisim.append(dict(sektor=SEKTOR_AD[r["sektor"]], eski_tls=r["tls_surumu"], eski_pq=evet(r["pq_destek"]),
+                                yeni_tls=y_["tls_surumu"], yeni_pq=evet(y_["pq_destek"]),
+                                cdn_eski=r["_cdnli"], cdn_yeni=y_["_cdnli"]))
+    R["zaman"] = dict(ortak=len(ortak),
+                      pq_ekim=sum(evet(r["pq_destek"]) for r in ortak),
+                      pq_kasim=sum(evet(t3[r["alan_adi"]]["pq_destek"]) for r in ortak),
+                      tls13_ekim=sum(evet(r["tls13_destek"]) for r in ortak),
+                      tls13_kasim=sum(evet(t3[r["alan_adi"]]["tls13_destek"]) for r in ortak),
+                      pq_kazanan=sum(1 for d in degisim if d["yeni_pq"] and not d["eski_pq"]),
+                      pq_kaybeden=sum(1 for d in degisim if d["eski_pq"] and not d["yeni_pq"]),
+                      tls_yukselten=sum(1 for d in degisim if d["eski_tls"] == "TLSv1.2" and d["yeni_tls"] == "TLSv1.3"),
+                      kazanan_kendi_sunucu=sum(1 for d in degisim if d["yeni_pq"] and not d["eski_pq"] and not d["cdn_yeni"]),
+                      degisimler=degisim)
+    R["kendi_sunucu_pq_sunucu_basligi"] = dict(Counter((r["server_basligi"] or "(boş)").split("/")[0]
+                                                       for r in ok if not r["_cdnli"] and evet(r["pq_destek"])))
+    R["cdn_kaynak"] = dict(Counter(r.get("_cdn_kaynak", "başlık") for r in ok if r["_cdnli"]))
+    R["cdn_pq"] = {ad: f"{sum(evet(r['pq_destek']) for r in ok if r['cdn'] == ad)}/{sum(1 for r in ok if r['cdn'] == ad)}"
+                   for ad in sorted({r["cdn"] for r in ok if r["_cdnli"]})}
+    R["tls12_yalniz"] = sum(1 for r in ok if not evet(r["tls13_destek"]))
 
     # Bant genişliği / ölçek analizi
     ek = R["ag"]["yazilan_fark"] + R["ag"]["okunan_fark"]

@@ -173,6 +173,60 @@ def tr(x, b=1):
     return f"{x:.{b}f}".replace(".", ",")
 
 
+
+
+def us(p):
+    """p değeri için '10⁻⁷³' biçiminde üst sınır."""
+    import math
+    e = math.floor(math.log10(p)) + 1 if p > 0 else -300
+    return "10" + str(e).translate(str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹"))
+
+
+# ---------------------------------------------------------------------------
+# VERİLER
+# ---------------------------------------------------------------------------
+s = {o["sektor"]: o for o in R["sektor"]}
+T = s["TÜMÜ"]
+SEKT = [o for o in R["sektor"] if o["sektor"] != "TÜMÜ"]
+ag = R["ag"]
+sim = {(x["senaryo"], x["kayip"]): x for x in R["simulasyon"]["rtt20"]}
+sim65 = {(x["senaryo"], x["kayip"]): x for x in R["simulasyon"]["rtt65"]}
+N_LISTE, N = R["liste_boyutu"], T["n"]
+N_SEK = len(SEKT)
+import csv as _csv
+_SEK_AD = {"Banka": "Banka", "SigortaFinans": "Sigorta ve finans", "Kamu": "Kamu", "Saglik": "Sağlık",
+           "Altyapi": "Kritik altyapı", "Universite": "Üniversite", "ETicaret": "E-ticaret"}
+LISTE_SEKTOR = [r["sektor"] for r in _csv.DictReader(open(os.path.join(KOK, "veri", "siteler_500.csv"), encoding="utf-8-sig"))]
+cdn_k, cdn_n = map(int, R["cdn_fisher"]["cdn"].split("/"))
+oz_k, oz_n = map(int, R["cdn_fisher"]["kendi"].split("/"))
+ks, kc = R["katman_kendi_sunucu"], R["katman_cdn"]
+Z = R["zaman"]
+uni_kaz = sum(1 for d in Z["degisimler"] if d["sektor"] == "Üniversite" and d["yeni_pq"] and not d["eski_pq"])
+TU = R["tutarlilik"]
+B, E_, U = s["Banka"], s["E-ticaret"], s["Üniversite"]
+pk = R["sektor_permutasyon_cdn_katmanli"]["p"]
+sfk, sfh = R["simulasyon"]["sf_klasik_seg"], R["simulasyon"]["sf_hibrit_seg"]
+k01 = (sim[("Klasik", 0.01)], sim[("Hibrit (tarayıcı)", 0.01)], sim[("Tarayıcı → klasik sunucu", 0.01)])
+k10 = (sim[("Klasik", 0.10)], sim[("Hibrit (tarayıcı)", 0.10)], sim[("Tarayıcı → klasik sunucu", 0.10)])
+art = lambda a, b: 100 * (b["ortalama_ms"] / a["ortalama_ms"] - 1)
+en_yuksek = max(SEKT, key=lambda o: o["pq"])
+mn = R["cdn_pq"].get("Medianova", "0/0")
+cdn_dis = R["cdn_arkasinda_destek_yok"]
+n_cdn_tls12 = sum(1 for _, v in cdn_dis if v == "TLSv1.2")
+n_hrr = len(R["hrr"])
+sert = R["sertifika"]; n_rsa = sum(v for k, v in sert.items() if k.startswith("RSA")); n_ec = sert.get("EC-256", 0)
+
+
+def kesir(x):
+    a_, b_ = map(int, x.split("/"))
+    return a_, b_
+
+
+u_k, u_n = kesir(ks["Üniversite"]); b_k, b_n = kesir(ks["Banka"]); ka_k, ka_n = kesir(ks["Kamu"])
+from scipy import stats as _st
+p_ub = _st.fisher_exact([[u_k, u_n - u_k], [b_k, b_n - b_k]])[1]
+p_uk = _st.fisher_exact([[u_k, u_n - u_k], [ka_k, ka_n - ka_k]])[1]
+
 # ---------------------------------------------------------------------------
 # KAPAK
 # ---------------------------------------------------------------------------
@@ -189,11 +243,10 @@ P("", sonra=50)
 for k, v in (("Hazırlayan", ogrenci["ad"]), ("Öğrenci Numarası", ogrenci["no"]),
              ("Program", "Bilgisayar Mühendisliği Yüksek Lisans (Bilimsel Hazırlık)"),
              ("Öğretim Üyesi", "Prof. Dr. Agah Tuğrul KORUCU"), ("Akademik Dönem", ogrenci["donem"])):
-    p = P(f"**{k}:** {v}", WD_ALIGN_PARAGRAPH.CENTER, 12, sonra=2)
+    P(f"**{k}:** {v}", WD_ALIGN_PARAGRAPH.CENTER, 12, sonra=2)
 P("", sonra=60)
 P("İstanbul, Kasım 2026", WD_ALIGN_PARAGRAPH.CENTER, 12)
 
-# kapak ayrı bölüm: sayfa numarası yok; sonraki bölüm 1'den başlar
 yeni = doc.add_section(WD_SECTION.NEW_PAGE)
 yeni.top_margin = yeni.bottom_margin = yeni.left_margin = yeni.right_margin = Cm(2.5)
 yeni.footer.is_linked_to_previous = False
@@ -209,54 +262,49 @@ for tip, metin in (("begin", None), (None, "PAGE"), ("end", None)):
         e = OxmlElement("w:instrText"); e.set(qn("xml:space"), "preserve"); e.text = metin; r._r.append(e)
 r.font.name = "Times New Roman"; r.font.size = Pt(11)
 
-s = {o["sektor"]: o for o in R["sektor"]}
-T = s["TÜMÜ"]
-ag = R["ag"]
-sim = {(x["senaryo"], x["kayip"]): x for x in R["simulasyon"]["rtt20"]}
-sim65 = {(x["senaryo"], x["kayip"]): x for x in R["simulasyon"]["rtt65"]}
-
 # ---------------------------------------------------------------------------
 # ÖZET
 # ---------------------------------------------------------------------------
 H1("ÖZET")
 P("Yeterince güçlü kuantum bilgisayarlar, bugün HTTPS trafiğini koruyan eliptik eğri tabanlı anahtar değişimini "
   "kırabilecektir; \"şimdi topla, sonra çöz\" tehdidi nedeniyle bu risk bugünden başlamaktadır. Bu projede "
-  "Türkiye'de bankacılık, kamu, üniversite ve e-ticaret sektörlerine ait 130 web sitesinin, NIST FIPS 203 ile "
-  "standartlaştırılan ML-KEM'e dayalı hibrit X25519MLKEM768 anahtar değişimine hazırlığı, Python ve OpenSSL 4.0.3 "
-  "ile geliştirilen açık bir ölçüm aracıyla iki tur hâlinde ölçülmüş; bulgular Wireshark paket yakalamasıyla "
-  f"doğrulanmıştır. Başarıyla ölçülen 129 sitenin %{tr(T['pq'])}'i kuantum sonrası anahtar değişimini "
-  f"desteklemekte, %{tr(T['tls12'])}'i ise hâlâ yalnızca TLS 1.2 kullanmaktadır. E-ticaret sitelerinin "
-  f"%{tr(s['E-ticaret']['pq'])}'i hazırken bankaların hiçbiri hazır değildir. Hazırlığın belirleyicisi içerik "
-  f"dağıtım ağı (CDN) kullanımıdır: CDN arkasındaki sitelerin %96,8'i, kendi sunucusunu işletenlerin %2,0'ı hazırdır "
-  f"(Fisher kesin testi, p < 10⁻²⁵); CDN kullanımı sabit tutulduğunda sektörler arasındaki fark ortadan kalkmaktadır "
-  f"(katmanlı permütasyon testi, p = {tr(R['sektor_permutasyon_cdn_katmanli']['p'], 2)}). Hibrit el sıkışma, "
-  "ServerHello mesajını 122 bayttan 1210 bayta çıkarmakta, el sıkışma başına yaklaşık 2,3 KB ek veri getirmekte ve "
-  "tarayıcı benzeri ClientHello'yu (medyan 1534 bayt) 1460 baytlık TCP MSS sınırının ötesine taşıyarak iki "
-  "segmente bölmektedir. Ölçülen verilerle beslenen Monte Carlo simülasyonu, %1–10 segment kaybında bu ek "
-  "segmentin ortalama el sıkışma süresini %1,5–7 artırdığını göstermektedir. Sonuçlar, Türkiye'de kuantum sonrası "
-  "geçişin kurumsal kararlardan çok altyapı sağlayıcıları üzerinden ilerlediğini ortaya koymaktadır.")
+  f"Türkiye'de {N_SEK} kritik sektöre (bankacılık, sigorta ve finans, kamu, sağlık, kritik altyapı, üniversite, "
+  f"e-ticaret) ait {N_LISTE} web sitesinin, NIST FIPS 203 ile standartlaştırılan ML-KEM'e dayalı hibrit "
+  "X25519MLKEM768 anahtar değişimine hazırlığı, Python ve OpenSSL 4.0.3 ile geliştirilen açık bir ölçüm aracıyla "
+  "ölçülmüş; bulgular Wireshark paket yakalamasıyla doğrulanmıştır. Başarıyla ölçülen "
+  f"{N} sitenin %{tr(T['pq'])}'i kuantum sonrası anahtar değişimini desteklemekte, %{tr(T['tls12'])}'i ise hâlâ "
+  f"yalnızca TLS 1.2 kullanmaktadır. E-ticaret sitelerinin %{tr(E_['pq'])}'i hazırken bankalarda bu oran "
+  f"%{tr(B['pq'])}'tür. Hazırlığın en güçlü belirleyicisi içerik dağıtım ağı (CDN) kullanımıdır: CDN arkasındaki "
+  f"sitelerin %{tr(100 * cdn_k / cdn_n)}'i, kendi sunucusunu işletenlerin %{tr(100 * oz_k / oz_n)}'i hazırdır "
+  f"(Fisher kesin testi, p < {us(R['cdn_fisher']['p'])}). Kendi sunucusunu işletenler arasında ise üniversiteler "
+  "öne çıkmakta, bankalar geride kalmaktadır. Ekim ve Kasım 2026 ölçümleri karşılaştırıldığında altı haftada "
+  f"{Z['pq_kazanan']} kurumun kendi sunucusunda geçiş yaptığı görülmüştür. Hibrit el sıkışma, ServerHello mesajını "
+  "122 bayttan 1210 bayta çıkarmakta, el sıkışma başına yaklaşık 2,3 KB ek veri getirmekte ve tarayıcı benzeri "
+  "ClientHello'yu 1460 baytlık TCP MSS sınırının ötesine taşıyarak iki segmente bölmektedir. Ölçülen verilerle "
+  f"beslenen Monte Carlo simülasyonu, %1–10 segment kaybında ortalama el sıkışma süresinin %{tr(art(k01[0], k01[1]))}–"
+  f"{tr(art(k10[0], k10[1]))} arttığını göstermektedir.")
 P("**Anahtar Kelimeler:** kuantum sonrası kriptografi, TLS 1.3, ML-KEM, hibrit anahtar değişimi, ağ ölçümü, "
   "TCP segmentasyonu, CDN")
 
 H1("ABSTRACT")
 P("Cryptographically relevant quantum computers would break the elliptic-curve key exchange that protects today's "
   "HTTPS traffic, and the \"harvest now, decrypt later\" threat makes this a present-day risk. This project measures "
-  "the readiness of 130 Turkish websites in the banking, public, university and e-commerce sectors for the hybrid "
-  "X25519MLKEM768 key exchange using an open Python/OpenSSL 4.0.3 measurement tool in two runs, validated by "
-  "packet capture. Of 129 sites measured, 24.8% support post-quantum key exchange and 26.4% still offer only "
-  "TLS 1.2; 80% of e-commerce sites are ready while no bank is. CDN use is the determinant: 96.8% of CDN-fronted "
-  "sites are ready versus 2.0% of self-hosted ones (Fisher's exact test, p < 10⁻²⁵), and the sector effect "
-  "disappears once CDN use is controlled for. The hybrid handshake grows the ServerHello from 122 to 1210 bytes, adds "
-  "about 2.3 KB per handshake and splits the browser-like ClientHello (median 1534 bytes) into two TCP segments. "
-  "A Monte Carlo simulation fed with the measured sizes shows that the extra segment increases mean handshake time "
-  "by 1.5–7% at 1–10% segment loss.")
+  f"the readiness of {N_LISTE} Turkish websites in {N_SEK} critical sectors for the hybrid X25519MLKEM768 key exchange "
+  "using an open Python/OpenSSL 4.0.3 measurement tool, validated by packet capture. Of "
+  f"{N} sites measured, {tr(T['pq']).replace(',', '.')}% support post-quantum key exchange and "
+  f"{tr(T['tls12']).replace(',', '.')}% still offer only TLS 1.2; {tr(E_['pq']).replace(',', '.')}% of e-commerce "
+  f"sites but only {tr(B['pq']).replace(',', '.')}% of banks are ready. CDN use is the strongest determinant: "
+  f"{tr(100 * cdn_k / cdn_n).replace(',', '.')}% of CDN-fronted versus {tr(100 * oz_k / oz_n).replace(',', '.')}% of "
+  "self-hosted sites are ready. Among self-hosted sites, universities lead and banks lag. Comparing October and "
+  f"November 2026 measurements, {Z['pq_kazanan']} institutions migrated on their own servers within six weeks. The "
+  "hybrid handshake grows the ServerHello from 122 to 1210 bytes, adds about 2.3 KB per handshake and splits the "
+  "browser-like ClientHello into two TCP segments; a Monte Carlo simulation fed with the measured sizes shows a "
+  f"{tr(art(k01[0], k01[1])).replace(',', '.')}–{tr(art(k10[0], k10[1])).replace(',', '.')}% increase in mean handshake "
+  "time at 1–10% segment loss.")
 P("**Keywords:** post-quantum cryptography, TLS 1.3, ML-KEM, hybrid key exchange, network measurement, TCP "
   "segmentation, CDN")
 sayfa_sonu()
 
-# ---------------------------------------------------------------------------
-# İÇİNDEKİLER (statik)
-# ---------------------------------------------------------------------------
 H1("İÇİNDEKİLER")
 for satir in ["Özet / Abstract", "1. Giriş", "2. Problem Tanımı ve İhtiyaç Analizi",
               "3. Literatür Araştırması ve Mevcut Sistemlerin İncelenmesi",
@@ -307,24 +355,24 @@ P("Veri iletişimi açısından bu geçiş yalnızca bir kriptografi değişikli
   "kayıplı kanallarda yeniden iletim olasılığını ve ara cihazların davranışını etkiler. Dolayısıyla soru iki "
   "yönlüdür: (i) Türkiye'deki kritik sektör sunucuları bu geçişe ne kadar hazırdır, (ii) geçiş ağ katmanına ne "
   "maliyet getirmektedir?")
-P("**Projenin amacı ve kapsamı.** Bu proje; dört kritik sektörden 130 web sitesinin TLS ve kuantum sonrası "
-  "hazırlığını ölçen, açık ve tekrarlanabilir bir ölçüm sistemi tasarlamayı, hazırlığın belirleyicilerini "
-  "istatistiksel olarak ortaya koymayı ve hibrit anahtar değişiminin bayt, segment ve gecikme düzeyindeki ağ "
-  "maliyetini ölçüm, paket yakalama ve simülasyonla değerlendirmeyi amaçlamaktadır. Kapsam, sunucuların "
-  "dışarıdan gözlemlenebilen TLS el sıkışma davranışıyla sınırlıdır; CDN ile kaynak sunucu arasındaki bağlantı "
-  "ve sertifika imzalarının kuantum sonrası geçişi kapsam dışıdır.")
+P(f"**Projenin amacı ve kapsamı.** Bu proje; {N_SEK} kritik sektörden {N_LISTE} web sitesinin TLS ve kuantum "
+  "sonrası hazırlığını ölçen, açık ve tekrarlanabilir bir ölçüm sistemi tasarlamayı, hazırlığın belirleyicilerini "
+  "istatistiksel olarak ortaya koymayı, geçişin zaman içindeki ilerleyişini izlemeyi ve hibrit anahtar "
+  "değişiminin bayt, segment ve gecikme düzeyindeki ağ maliyetini ölçüm, paket yakalama ve simülasyonla "
+  "değerlendirmeyi amaçlamaktadır. Kapsam, sunucuların dışarıdan gözlemlenebilen TLS el sıkışma davranışıyla "
+  "sınırlıdır; CDN ile kaynak sunucu arasındaki bağlantı ve sertifika imzalarının kuantum sonrası geçişi kapsam "
+  "dışıdır.")
 P("Projenin katkıları şunlardır:")
-madde(["Türkiye'de dört kritik sektörden 130 web sitesinin TLS sürümü, kuantum sonrası anahtar değişimi desteği, "
-       "seçilen anahtar grubu, HelloRetryRequest davranışı, sertifika türü ve HTTP/3 desteği iki tur hâlinde "
-       "ölçülmüştür.",
-       "Hazırlığın kurumun kendi çabasından çok CDN kullanımına bağlı olduğu gösterilmiş; CDN'e göre katmanlanmış "
-       "analizle sektörler arası farkın büyük ölçüde altyapı farkından kaynaklandığı istatistiksel olarak "
-       "ortaya konmuştur.",
+madde([f"Türkiye'de {N_SEK} kritik sektörden {N_LISTE} web sitesinin TLS sürümü, kuantum sonrası anahtar "
+       "değişimi desteği, seçilen anahtar grubu, HelloRetryRequest davranışı, sertifika türü ve HTTP/3 desteği "
+       "ölçülmüş; ilk 130 site Ekim ve Kasım 2026 arasında üç kez ölçülerek geçişin hızı izlenmiştir.",
+       "Hazırlığın en güçlü belirleyicisinin CDN kullanımı olduğu gösterilmiş; CDN'e göre katmanlanmış analizle "
+       "kendi sunucusunu işleten kurumlar arasında da sektörel fark bulunduğu ortaya konmuştur.",
        "Hibrit anahtar değişiminin mesaj boyutlarına ve TCP segmentasyonuna etkisi hem ölçüm verisiyle hem de "
-       "Wireshark paket yakalamasıyla doğrulanmış; ek segmentin paket kaybı altındaki gecikme maliyeti analitik "
+       "Wireshark paket yakalamasıyla doğrulanmış; ek segmentlerin paket kaybı altındaki gecikme maliyeti analitik "
        "model ve Monte Carlo simülasyonuyla nicelleştirilmiştir.",
-       "Ölçümü tekrarlanabilir kılan açık kaynaklı bir Python aracı ve Docker ortamı geliştirilmiştir."],
-      numarali=True)
+       "Ölçümü tekrarlanabilir kılan, paralel çalışabilen açık kaynaklı bir Python aracı, DNS ön kontrol betiği ve "
+       "Docker ortamı geliştirilmiştir."], numarali=True)
 
 # ---------------------------------------------------------------------------
 # 2. PROBLEM
@@ -353,7 +401,7 @@ H2("2.3. İhtiyaç Analizi ve Paydaşlar")
 tablo("Paydaşlar ve projenin karşıladığı ihtiyaçlar", [
     ["Paydaş", "İhtiyaç", "Projenin karşılığı"],
     ["Kurum BT/ağ ekipleri", "Kendi sunucusunun PQ durumunu bilmek", "Açık ölçüm aracı (olcum.py, Docker)"],
-    ["Düzenleyiciler (BDDK, BTK, USOM vb.)", "Sektörel risk tablosu", "Sektör bazında hazırlık oranları ve güven aralıkları"],
+    ["Düzenleyiciler (BDDK, BTK, USOM vb.)", "Sektörel risk tablosu", "Sektör bazında hazırlık oranları, güven aralıkları ve zaman içi değişim"],
     ["Ağ yöneticileri", "Büyüyen el sıkışmanın ağ etkisini öngörmek", "Bayt/segment ölçümü, kayıp altında gecikme modeli"],
     ["Son kullanıcılar", "Verilerinin uzun vadeli gizliliği", "Hangi sektörlerde riskin sürdüğünün görünür kılınması"],
 ], genislikler=[4, 5.5, 6])
@@ -406,11 +454,11 @@ tablo("İlgili çalışmalar ile bu projenin karşılaştırılması", [
     ["Dubey ve Varshney (2026)", "32 011 alan adı", "Var", "–", "–", "–"],
     ["F5 Labs (2026)", "İlk 1 milyon site", "Kısmi", "–", "–", "–"],
     ["UK sektör çalışması (2026)", "BK, 10 sektör", "Var", "–", "–", "–"],
-    ["**Bu proje**", "130 site, 4 sektör", "**Var**", "**Var (ölçüm + pcap)**", "**Var (simülasyon)**", "**Var**"],
+    ["**Bu proje**", f"{N_LISTE} site, {N_SEK} sektör", "**Var**", "**Var (ölçüm + pcap)**", "**Var (simülasyon)**", "**Var**"],
 ], genislikler=[3.6, 2.8, 2.0, 2.8, 2.6, 1.6], boyut=9)
-P("Tablo 3'te görüldüğü gibi bu proje, Türkiye'nin kritik sektörlerine odaklanması ve hazırlık ölçümünü aynı "
-  "veri seti üzerinde ağ maliyeti ve kayıp altında gecikme analiziyle birleştirmesiyle mevcut çalışmalardan "
-  "ayrılmaktadır.")
+P("Tablo 3'te görüldüğü gibi bu proje, Türkiye'nin kritik sektörlerine odaklanması, geçişi zaman içinde "
+  "izlemesi ve hazırlık ölçümünü aynı veri seti üzerinde ağ maliyeti ve kayıp altında gecikme analiziyle "
+  "birleştirmesiyle mevcut çalışmalardan ayrılmaktadır.")
 
 # ---------------------------------------------------------------------------
 # 4. GEREKSİNİMLER
@@ -419,21 +467,21 @@ H1("4. SİSTEM GEREKSİNİMLERİ VE HABERLEŞME ANALİZİ")
 H2("4.1. İşlevsel Gereksinimler")
 tablo("Ölçüm sisteminin işlevsel gereksinimleri", [
     ["Kod", "Gereksinim"],
-    ["İG-1", "Bir alan adı listesini (sektör, alan adı) okuyup her siteyi sırayla ölçebilmeli."],
+    ["İG-1", "Bir alan adı listesini (sektör, alan adı) okuyup her siteyi ölçebilmeli; listeyi DNS'te önceden doğrulayabilmeli."],
     ["İG-2", "Sunucunun TLS 1.3 / TLS 1.2 desteğini ve tarayıcı benzeri teklifte seçtiği grubu belirleyebilmeli."],
     ["İG-3", "Yalnız X25519MLKEM768 sunulduğunda bağlantı kurulup kurulmadığını (PQ desteği) belirleyebilmeli."],
     ["İG-4", "ClientHello/ServerHello boyutunu, okunan/yazılan toplam baytı ve segment sayısını kaydetmeli."],
     ["İG-5", "HelloRetryRequest durumunu ve sertifika anahtar türü/uzunluğunu tespit etmeli."],
     ["İG-6", "HTTP yanıt başlıklarından HTTP/3 ilanını ve CDN kullanımını belirlemeli."],
-    ["İG-7", "Sonuçları makine tarafından okunabilir CSV biçiminde yazmalı ve yarıda kalan ölçüme devam edebilmeli."],
+    ["İG-7", "Sonuçları CSV biçiminde yazmalı, yarıda kalan ölçüme devam edebilmeli ve farklı siteleri paralel ölçebilmeli."],
 ], genislikler=[1.6, 13.9])
 H2("4.2. İşlevsel Olmayan Gereksinimler")
 tablo("İşlevsel olmayan gereksinimler", [
     ["Kod", "Gereksinim", "Karşılama yöntemi"],
-    ["İOG-1 Etik", "Sunuculara yük bindirmemeli, tarama/saldırı yapmamalı", "Normal ziyaretçi bağlantısı, siteler arası 1,5 s bekleme"],
+    ["İOG-1 Etik", "Sunuculara yük bindirmemeli, tarama/saldırı yapmamalı", "Normal ziyaretçi bağlantısı, her siteye tek bağlantı dizisi, bekleme"],
     ["İOG-2 Tekrarlanabilirlik", "Başka araştırmacılar aynı ölçümü yapabilmeli", "Açık kod, Docker ortamı, sabit site listesi"],
-    ["İOG-3 Tutarlılık", "Anlık değil kararlı yapılandırmayı yansıtmalı", "İki ölçüm turu, 5 tekrar ve medyan"],
-    ["İOG-4 Taşınabilirlik", "Windows, Linux ve macOS'ta çalışmalı", "Yalnız standart Python kütüphanesi + OpenSSL"],
+    ["İOG-3 Tutarlılık", "Anlık değil kararlı yapılandırmayı yansıtmalı", "Üç ölçüm turu, 5 tekrar ve medyan"],
+    ["İOG-4 Ölçeklenebilirlik", "Yüzlerce siteyi makul sürede ölçmeli", "Farklı siteler arası paralellik (4 iş parçacığı)"],
     ["İOG-5 Gizlilik", "Kurumları teşhir etmemeli", "Sonuçların sektör bazında raporlanması"],
 ], genislikler=[3.4, 6, 6.1], boyut=9.5)
 H2("4.3. Haberleşme Parametrelerinin Analizi")
@@ -441,16 +489,20 @@ P("Yönergede önerilen parametrelerin bu projedeki karşılıkları Tablo 6'da 
   "kanalı TCP ile güvenilir hâle getirildiğinden, fiziksel katmandaki bit hataları (BER) uygulamaya "
   "segment kaybı ve yeniden iletim olarak yansır. Bu nedenle BER yerine **segment kayıp oranı** temel "
   "güvenilirlik parametresi olarak kullanılmıştır.")
+sure_dk = 28
 tablo("Haberleşme parametreleri, ölçüm yöntemleri ve elde edilen değerler", [
     ["Parametre", "Bu projedeki karşılığı", "Yöntem", "Değer / aralık"],
     ["Veri miktarı (bayt)", "El sıkışmada gönderilen/alınan bayt", "s_client -msg, Wireshark", "+1184 / +1088 B (ölçüm)"],
     ["Bant genişliği kullanımı", "Ek bayt × el sıkışma sayısı", "Hesaplama", "1 milyon el sıkışma/gün ≈ 2,27 GB"],
-    ["Segment sayısı", "ClientHello'nun MSS=1460 B'a bölünmesi", "⌈(boyut+9)/1460⌉, pcap", "Klasik 1, hibrit tarayıcı 2"],
-    ["Gecikme (ms)", "TCP RTT, HRR ek RTT, el sıkışma süresi", "TCP connect ×5 medyanı", "Medyan RTT 19,2–20,0 ms"],
+    ["Segment sayısı", "ClientHello ve sunucu uçuşunun MSS=1460 B'a bölünmesi", "⌈(boyut+9)/1460⌉, pcap",
+     f"CH: 1 → 2 · sunucu: {sfk} → {sfh}"],
+    ["Gecikme (ms)", "TCP RTT, HRR ek RTT, el sıkışma süresi", "TCP connect ×5 medyanı",
+     f"Medyan RTT {tr(ag['rtt_medyan_tur3'])} ms"],
     ["Paket (segment) kaybı", "Kayıp altında el sıkışma süresi", "Analitik model + Monte Carlo", "p = %0–10 (simülasyon)"],
-    ["Güvenilirlik", "Bağlantı başarısı, turlar arası tutarlılık", "İki tur karşılaştırması", "129/129 aynı sonuç"],
-    ["Güvenlik", "PQ anahtar değişimi, TLS sürümü, sertifika", "Yalnız-PQ el sıkışma testi", "%24,8 PQ hazır"],
-    ["Ölçeklenebilirlik", "Site sayısının artırılabilmesi", "CSV tabanlı liste, kaldığı yerden devam", "≈ 25–30 dk / 130 site"],
+    ["Güvenilirlik", "Bağlantı başarısı, turlar arası tutarlılık", "Üç tur karşılaştırması",
+     f"{N}/{N_LISTE} başarılı ölçüm"],
+    ["Güvenlik", "PQ anahtar değişimi, TLS sürümü, sertifika", "Yalnız-PQ el sıkışma testi", f"%{tr(T['pq'])} PQ hazır"],
+    ["Ölçeklenebilirlik", "Site sayısının artırılabilmesi", "CSV liste, paralel mod", f"{N_LISTE} site ≈ {sure_dk} dk"],
 ], genislikler=[3.2, 4.4, 3.8, 4.1], boyut=9)
 
 # ---------------------------------------------------------------------------
@@ -464,10 +516,10 @@ P(f"Şekil {n_mim}'de sistemin genel mimarisi gösterilmektedir. **Gönderici (i
   "çalıştırmakta ve çıktısını ayrıştırmaktadır. **İletim kanalı**, Türkiye'deki bir ev internet bağlantısıdır "
   "(Wi-Fi → modem → ISS → İnternet); kanal IP/TCP ile modellenmiş, MSS değeri Ethernet MTU'sundan (1500 B) "
   "IP (20 B) ve TCP (20 B) başlıkları çıkarılarak 1460 B kabul edilmiştir. **Alıcı (sunucu)** tarafında iki "
-  "farklı yapı bulunmaktadır: TLS bağlantısının bir CDN uç sunucusunda sonlandığı siteler (31) ve kurumun kendi "
-  "web sunucusunun TLS'i sonlandırdığı siteler (98). CDN uç sunucusu ile kurumun kaynak sunucusu arasındaki "
-  "bağlantı dışarıdan gözlemlenemediği için ölçüm kapsamı dışındadır. Wireshark, gönderici bilgisayardaki ağ "
-  "arayüzünü dinleyerek paket düzeyinde doğrulama sağlamaktadır.")
+  f"farklı yapı bulunmaktadır: TLS bağlantısının bir CDN uç sunucusunda sonlandığı siteler ({cdn_n}) ve kurumun "
+  f"kendi web sunucusunun TLS'i sonlandırdığı siteler ({oz_n}). CDN uç sunucusu ile kurumun kaynak sunucusu "
+  "arasındaki bağlantı dışarıdan gözlemlenemediği için ölçüm kapsamı dışındadır. Wireshark, gönderici "
+  "bilgisayardaki ağ arayüzünü dinleyerek paket düzeyinde doğrulama sağlamaktadır.")
 H2("5.2. Protokol Katmanları")
 n_kat = sekil("diyagram_katman_esleme.png", "OSI ve TCP/IP katmanlarının, ilgili protokol mekanizmalarının ve "
                                              "bu projede ölçülen değişkenlerin eşlenmesi.")
@@ -477,8 +529,7 @@ P(f"Şekil {n_kat}, ölçülen her değişkenin hangi protokol katmanına ait ol
   "katmanlar arası etki, projenin veri iletişimi açısından odak noktasıdır.")
 H2("5.3. Protokol Mesajlaşma ve Zamanlama")
 n_sira = sekil("diyagram_tls13_sira.png", "TCP ve TLS 1.3 el sıkışmasının sıra diyagramı: (a) hibrit "
-                                           "X25519MLKEM768 ile 1-RTT el sıkışma, (b) HelloRetryRequest durumu.",
-               16)
+                                           "X25519MLKEM768 ile 1-RTT el sıkışma, (b) HelloRetryRequest durumu.", 16)
 P(f"Şekil {n_sira}a'da tarayıcı benzeri bir istemcinin hibrit el sıkışması gösterilmektedir. TCP üçlü el "
   "sıkışması 1 RTT sürer; ardından istemci, iki anahtar payı (X25519MLKEM768 için 1216 B ve yedek olarak "
   "X25519 için 32 B) içeren ve iki TCP segmentine bölünen ClientHello'yu gönderir. Sunucu, ML-KEM şifre metnini "
@@ -492,8 +543,8 @@ n_ch = sekil("diyagram_clienthello_segment.png", "ClientHello mesajının yapıs
 P(f"Şekil {n_ch}, ClientHello mesajının bayt düzeyindeki bileşimini göstermektedir. Her TLS el sıkışma mesajı "
   "5 baytlık TLS kayıt başlığı ve 4 baytlık el sıkışma başlığıyla taşınır. Klasik ClientHello 232 B olup tek "
   "segmente rahatlıkla sığarken, tarayıcı benzeri hibrit ClientHello'nun neredeyse %80'ini oluşturan key_share "
-  "uzantısı mesajı 1543 bayta (başlıklarla) çıkarır. Bu değer 1460 baytlık MSS'i 83 bayt aştığından mesaj iki "
-  "TCP segmentiyle iletilmek zorundadır. Bir Ethernet çerçevesi bu durumda 14 B Ethernet + 20 B IP + 20 B TCP "
+  "uzantısı mesajı 1543 bayta (başlıklarla) çıkarır. Bu değer 1460 baytlık MSS'i aştığından mesaj iki TCP "
+  "segmentiyle iletilmek zorundadır. Bir Ethernet çerçevesi bu durumda 14 B Ethernet + 20 B IP + 20 B TCP "
   "başlığı ile en fazla 1514 B olur.")
 H2("5.5. Veri Akışı ve Ölçüm Algoritması")
 n_akis = sekil("diyagram_olcum_akis.png", "Ölçüm aracının site başına veri akışı ve karar yapısı.", 15)
@@ -502,8 +553,10 @@ P(f"Şekil {n_akis}'te her site için uygulanan ölçüm algoritması verilmişt
   "sonucu etkilemez. TCP bağlantı kurma süresi beş kez ölçülerek medyan RTT hesaplanır. Ardından beş bağlantı "
   "senaryosu sırayla uygulanır: (1) tarayıcı benzeri teklif, (2) TLS 1.2 kabul testi, (3) yalnız hibrit grup, "
   "(4) yalnız klasik grup ve (5) HTTP başlık sorgusu. Üçüncü ve dördüncü senaryolar yalnızca TLS 1.3 "
-  "destekleyen sunucularda ve beşer kez tekrarlanır. Sözde kod aşağıda verilmiştir:")
-kod = ("for (sektör, alan_adı) in siteler:\n"
+  "destekleyen sunucularda ve beşer kez tekrarlanır. Ölçeklenebilirlik için araç, farklı siteleri dört iş "
+  "parçacığıyla eşzamanlı ölçebilmektedir; her site yine sıralı ve tek bağlantı dizisiyle ölçüldüğünden tek "
+  "bir sunucuya binen yük artmaz. Sözde kod aşağıda verilmiştir:")
+kod = ("for (sektör, alan_adı) in siteler:            # paralel: farklı siteler eşzamanlı\n"
        "    ip  ← DNS(alan_adı)                          # bir kez\n"
        "    rtt ← medyan(TCP_connect(ip) × 5)\n"
        "    v   ← s_client(ip, groups=\"*X25519MLKEM768:*X25519:P-256\")\n"
@@ -526,7 +579,7 @@ P("Ölçüm sisteminde hata kontrolü üç düzeyde sağlanmaktadır. Taşıma d
   "AES-GCM) bütünlük doğrulamasına tabidir ve el sıkışma Finished mesajlarındaki HMAC ile doğrulanır. Uygulama "
   "düzeyinde ise ölçüm aracı her siteyi dns_hatasi, ulasilamadi, tls_hatasi ve zaman_asimi (10 s) durumlarıyla "
   "sınıflandırır; bir sitedeki beklenmeyen hata tüm ölçümü durdurmaz ve araç kesintiden sonra kaldığı yerden "
-  "devam eder.")
+  "devam eder. Ölçümden önce dns_kontrol.py betiği tüm alan adlarını çözerek hatalı girdileri ayıklar.")
 
 # ---------------------------------------------------------------------------
 # 6. TEKNOLOJİLER
@@ -544,6 +597,8 @@ tablo("Teknoloji seçimleri, gerekçeleri ve alternatifler", [
      "SecP256r1MLKEM768: tarayıcılar varsayılan olarak teklif etmiyor"],
     ["Taşıma", "TCP (TLS 1.3)", "HTTPS trafiğinin büyük çoğunluğu", "QUIC/HTTP3: yalnızca ilan (Alt-Svc) olarak kaydedildi"],
     ["Paket analizi", "Wireshark 4.6.8", "Çerçeve ve uzantı düzeyinde doğrulama", "tcpdump: görsel analiz için daha zahmetli"],
+    ["CDN tespiti", "HTTP başlıkları + bilinen CDN adres blokları", "Başlık gizleyen CDN'leri de yakalar",
+     "Yalnız başlık: Akamai/Fastly sitelerinin bir kısmı kaçar"],
     ["İstatistik", "Fisher kesin testi, Wilson aralığı, permütasyon testi",
      "Küçük örneklem ve sıfır hücreli tablolar için doğru sonuç", "Ki-kare: beklenen frekans < 5 olduğunda güvenilmez"],
     ["Gecikme analizi", "Analitik model + Monte Carlo", "Kayıp oranını kontrollü değiştirme imkânı",
@@ -559,130 +614,159 @@ P("Ölçüm aracı yalnızca Python'un standart kütüphanesini kullandığında
 # ---------------------------------------------------------------------------
 H1("7. UYGULAMA VE SİMÜLASYON SÜRECİ")
 H2("7.1. Veri Seti")
-P("Ölçüm, Türkiye'de yüksek değerli kişisel ve kurumsal veri işleyen dört sektörden seçilen 130 web sitesini "
-  "kapsamaktadır (Tablo 8). Her site için kurumun ana sayfasının alan adı (www önekli) kullanılmıştır.")
-tablo("Veri setinin sektörel dağılımı", [
-    ["Sektör", "Kapsam", "Site"],
-    ["Banka", "Kamu, özel ve katılım bankaları, merkez bankası", "27"],
-    ["Kamu", "Cumhurbaşkanlığı, TBMM, bakanlıklar, kamu kurumları, büyükşehir belediyeleri", "33"],
-    ["Üniversite", "Devlet ve vakıf üniversiteleri", "40"],
-    ["E-ticaret", "Pazar yerleri, perakende ve elektronik zincirleri", "30"],
-    ["Toplam", "", "130"],
-], genislikler=[3, 10.5, 2])
+P(f"Ölçüm, Türkiye'de yüksek değerli kişisel ve kurumsal veri işleyen {N_SEK} sektörden seçilen {N_LISTE} web "
+  "sitesini kapsamaktadır (Tablo 8). Her site için kurumun ana sayfasının alan adı kullanılmıştır. Ekim 2026'da "
+  "dört sektörden 130 siteyle başlayan liste, Kasım 2026'da ilk 130 siteyi aynen koruyarak genişletilmiştir; "
+  "böylece ilk 130 site için zaman içi karşılaştırma yapılabilmiştir.")
+kapsam = {"Banka": "Kamu, özel, katılım, kalkınma ve yatırım bankaları; merkez bankası; meslek birlikleri",
+          "Sigorta ve finans": "Sigorta ve emeklilik şirketleri, aracı kurumlar, borsa/takas, ödeme ve e-para kuruluşları",
+          "Kamu": "Cumhurbaşkanlığı, TBMM, bakanlıklar, yüksek yargı, düzenleyici kurumlar, büyükşehir belediyeleri, valilikler",
+          "Sağlık": "Özel hastane grupları, kamu sağlık hizmetleri, ilaç ve laboratuvar şirketleri, meslek birlikleri",
+          "Kritik altyapı": "Telekom ve İSS'ler, enerji ve su, havayolu ve havalimanı, raylı ve deniz ulaşımı, savunma",
+          "Üniversite": "Devlet ve vakıf üniversiteleri",
+          "E-ticaret": "Pazar yerleri, perakende, giyim, market, mobilya, seyahat ve ilan siteleri"}
+liste_say = {o["sektor"]: o["n"] for o in SEKT}
+from collections import Counter as _C
+liste_tam = _C(_SEK_AD.get(x, x) for x in LISTE_SEKTOR)
+tablo("Veri setinin sektörel dağılımı", [["Sektör", "Kapsam", "Listede", "Ölçülen"]] +
+      [[o["sektor"], kapsam.get(o["sektor"], ""), str(liste_tam.get(o["sektor"], "")), str(o["n"])] for o in SEKT] +
+      [["Toplam", "", str(N_LISTE), str(N)]], genislikler=[2.8, 9.4, 1.7, 1.7], boyut=9.5)
 H2("7.2. Kurulum ve Test Ortamı")
 madde(["**Donanım/işletim sistemi:** Windows işletim sistemli dizüstü bilgisayar, Türkiye'de ev internet "
        "bağlantısı (Wi-Fi).",
-       "**Yazılım:** Python 3, OpenSSL 4.0.3 (X25519MLKEM768 destekli), Wireshark 4.6.8. Alternatif olarak "
+       "**Yazılım:** Python 3.13, OpenSSL 4.0.3 (X25519MLKEM768 destekli), Wireshark 4.6.8. Alternatif olarak "
        "Dockerfile ile Alpine 3.22 + OpenSSL 3.5 ortamı.",
-       "**Doğrulama:** Araç başlangıçta openssl list -tls-groups çıktısında X25519MLKEM768 bulunduğunu kontrol "
-       "eder; bulunmazsa ölçümü başlatmaz.",
-       "**Pilot ölçüm:** Tam ölçümden önce 5 sitelik pilot (pilot.csv) ile ayrıştırma doğrulanmıştır.",
-       "**Ölçüm turları:** 1. tur 7 Ekim 2026 22.40–23.07, 2. tur 8 Ekim 2026 00.26–00.52 (aynı ağ, aynı araç)."])
+       "**Doğrulama:** Araç başlangıçta OpenSSL'in X25519MLKEM768 grubunu desteklediğini kontrol eder; liste "
+       f"ölçümden önce DNS'te doğrulanmış ve {N_LISTE} alan adının tamamı çözülene kadar düzeltilmiştir.",
+       "**Pilot ölçüm:** Tam ölçümden önce 20 sitelik pilot ile paralel mod ve ayrıştırma doğrulanmış; sonuçlar "
+       "Ekim ölçümüyle birebir aynı çıkmıştır.",
+       "**Ölçüm turları:** 1. tur 7 Ekim 2026 22.40–23.07 ve 2. tur 8 Ekim 2026 00.26–00.52 (130 site, sıralı); "
+       f"3. tur 22 Kasım 2026 18.10–18.38 ({N_LISTE} site, 4 paralel iş parçacığı). Tüm turlar aynı ev "
+       "bağlantısından yapılmıştır."])
 H2("7.3. Ölçüm Etiği")
 P("Her siteye normal bir ziyaretçinin kuracağı türden bağlantılar kurulmuş; port taraması veya güvenlik açığı "
-  "testi yapılmamıştır. Siteler arasında 1,5 saniye beklenerek sunuculara yük bindirilmesi önlenmiş, yalnızca "
+  "testi yapılmamıştır. Her site için bağlantılar sıralı yapılmış, siteler arasında bekleme uygulanmış, yalnızca "
   "herkese açık el sıkışma bilgisi kaydedilmiş ve sonuçlar sektör bazında raporlanmıştır. HTTP isteğinde "
   "kullanıcı aracısı başlığı ölçümün akademik amaçlı olduğunu belirtmektedir.")
 H2("7.4. Paket Yakalama Senaryosu")
 P("Ölçüm verisini bağımsız bir yöntemle doğrulamak için Wireshark ile, hibrit anahtar değişimini destekleyen "
   "bir e-ticaret sitesine (CDN arkasında) art arda kurulan klasik ve hibrit bağlantılar yakalanmıştır "
-  "(trendyol_klasik_hibrit.pcapng, 1185 paket). Yakalama dosyası ayrıca bu raporun hazırlanması sırasında "
-  "Python/Scapy ile yeniden ayrıştırılarak ClientHello ve ServerHello kayıt uzunlukları çıkarılmıştır.")
+  "(trendyol_klasik_hibrit.pcapng, 1185 paket). Yakalama dosyası ayrıca Python/Scapy ile yeniden ayrıştırılarak "
+  "ClientHello ve ServerHello kayıt uzunlukları çıkarılmıştır.")
 H2("7.5. Simülasyon Modeli: Paket Kaybı Altında El Sıkışma Süresi")
-P("Gerçek İnternet üzerinde kayıp oranı kontrol edilemediğinden, ClientHello'nun ikinci segmentinin kayıplı "
-  "kanallardaki etkisi ölçülen değerlerle beslenen bir model üzerinden incelenmiştir. **Bu bölümdeki sonuçlar "
-  "ölçüm değil simülasyondur.** Model varsayımları şunlardır:")
+P("Gerçek İnternet üzerinde kayıp oranı kontrol edilemediğinden, hibrit el sıkışmanın getirdiği ek segmentlerin "
+  "kayıplı kanallardaki etkisi ölçülen değerlerle beslenen bir model üzerinden incelenmiştir. **Bu bölümdeki "
+  "sonuçlar ölçüm değil simülasyondur.** Model varsayımları şunlardır:")
 madde(["Her segment, yönünden bağımsız olarak p olasılığıyla kaybolur (Bernoulli kayıp modeli).",
-       "Kayıpsız el sıkışma süresi 2 RTT'dir (TCP 1 RTT + TLS 1.3 1 RTT). RTT = 20 ms (ölçülen medyan) ve "
+       "Kayıpsız el sıkışma süresi 2 RTT'dir (TCP 1 RTT + TLS 1.3 1 RTT). RTT = 20 ms (ölçülen medyana yakın) ve "
        "65 ms (yurt dışı uç sunucular) için çalıştırılmıştır.",
        "SYN veya SYN/ACK kaybında ilk RTO 1 s'dir ve her denemede iki katına çıkar (Paxson vd., 2011).",
        "Veri segmentlerinde RTO = SRTT + max(4·RTTVAR, 200 ms) alınmıştır (Linux'taki 200 ms alt sınırı); "
        "kaybolan segmentler bir RTO sonra yeniden gönderilir ve tekrar kayıpta RTO iki katına çıkar.",
        "Segment sayıları ölçümden alınmıştır: klasik ClientHello 1, tarayıcı benzeri hibrit ClientHello 2 segment; "
-       f"sunucu uçuşu (ServerHello + sertifika vb.) klasikte {tr(ag['okunan_klasik'], 0)} B, hibritte "
-       f"{tr(ag['okunan_hibrit'], 0)} B olup her ikisi de 4 segmenttir.",
+       f"sunucu uçuşu (ServerHello + sertifika vb.) klasikte medyan {tr(ag['okunan_klasik'], 0)} B ({sfk} segment), "
+       f"hibritte {tr(ag['okunan_hibrit'], 0)} B ({sfh} segment).",
        "ACK kayıpları, hızlı yeniden iletim ve kuyruk kaybı yoklaması (TLP) modellenmemiştir; bu nedenle model "
        "kuyruk gecikmesini bir miktar abartabilir ancak senaryolar arası karşılaştırma için tutarlıdır."])
 P("Bu varsayımlar altında el sıkışmanın en az bir yeniden iletim içerme olasılığı analitik olarak "
   "**P = 1 − (1 − p)^n** şeklinde yazılabilir; burada n, kritik yoldaki toplam segment sayısıdır (klasikte "
-  "2 + 1 + 4 = 7, hibritte 2 + 2 + 4 = 8). Üç senaryo karşılaştırılmıştır: (i) klasik istemci → klasik sunucu, "
-  "(ii) tarayıcı → hibrit destekli sunucu ve (iii) tarayıcı → hibrit desteklemeyen sunucu. Üçüncü senaryo, "
-  "tarayıcının iki anahtar payını sunucu desteklemese de gönderdiği durumu temsil eder. Her kayıp oranı için "
-  "40 000 tekrar yapılmıştır.")
+  f"2 + 1 + {sfk} = {3 + sfk}, hibritte 2 + 2 + {sfh} = {4 + sfh}). Üç senaryo karşılaştırılmıştır: (i) klasik "
+  "istemci → klasik sunucu, (ii) tarayıcı → hibrit destekli sunucu ve (iii) tarayıcı → hibrit desteklemeyen "
+  "sunucu. Üçüncü senaryo, tarayıcının iki anahtar payını sunucu desteklemese de gönderdiği durumu temsil eder. "
+  "Her kayıp oranı için 40 000 tekrar yapılmıştır.")
 
 # ---------------------------------------------------------------------------
 # 8. BULGULAR
 # ---------------------------------------------------------------------------
 H1("8. BULGULAR, PERFORMANS TESTLERİ VE DEĞERLENDİRME")
-P("130 sitenin 129'u başarıyla ölçülmüştür; bir üniversite sitesiyle TLS bağlantısı kurulamamış ve analiz dışında "
-  "bırakılmıştır. Aksi belirtilmedikçe değerler ölçülmüş değerlerdir; Bölüm 8.5 simülasyon sonuçlarını içerir.")
+olcm = R["durumlar"]
+P(f"{N_LISTE} sitenin {N}'i başarıyla ölçülmüştür; {olcm.get('ulasilamadi', 0)} siteye ulaşılamamış, "
+  f"{olcm.get('tls_hatasi', 0)} siteyle TLS bağlantısı kurulamamış ve {olcm.get('zaman_asimi', 0)} site zaman "
+  "aşımına uğramıştır; bu siteler analiz dışında bırakılmıştır. Aksi belirtilmedikçe değerler 22 Kasım 2026 "
+  "ölçümüne aittir ve ölçülmüş değerlerdir; Bölüm 8.5'teki kayıp analizi simülasyon sonucudur.")
 H2("8.1. Sektörel Hazırlık (Ölçüm)")
-tsek = tablo("Sektöre göre TLS ve kuantum sonrası hazırlık (%, n = 129)",
+tsek = tablo(f"Sektöre göre TLS ve kuantum sonrası hazırlık (%, n = {N})",
              [["Sektör", "n", "TLS 1.3", "Yalnız TLS 1.2", "PQ hazır", "PQ %95 GA", "CDN arkasında", "HTTP/3"]] +
              [[o["sektor"], o["n"], tr(o["tls13"]), tr(o["tls12"]), tr(o["pq"]),
                f"{tr(o['pq_ci'][0])}–{tr(o['pq_ci'][1])}", tr(o["cdn"]), tr(o["http3"])] for o in R["sektor"]],
-             genislikler=[2.6, 1, 1.7, 2.2, 1.7, 2.4, 2.2, 1.7], boyut=9.5,
+             genislikler=[2.9, 1, 1.6, 2.1, 1.6, 2.4, 2.1, 1.6], boyut=9.5,
              not_="GA: Wilson yöntemiyle hesaplanan %95 güven aralığı (Wilson, 1927).")
 n_s1 = sekil("sekil_sektor_hazirlik.png", "Sektöre göre sitelerin hazırlık durumu ve kuantum sonrası destek "
                                           "oranının %95 güven aralığı.", 14.5)
-P(f"Ölçülen sitelerin %{tr(T['pq'])}'i (32/129; %95 GA: %{tr(T['pq_ci'][0])}–%{tr(T['pq_ci'][1])}) kuantum "
-  f"sonrası anahtar değişimini desteklemektedir. Yalnızca TLS 1.3 destekleyen siteler dikkate alındığında bu "
-  f"oran %33,7'dir (32/95). Sitelerin %{tr(T['tls12'])}'i ise hâlâ yalnızca TLS 1.2 kullanmaktadır ve kuantum "
-  f"sonrası geçiş için önce sürüm yükseltmesine ihtiyaç duymaktadır (Tablo {tsek}, Şekil {n_s1}). Sektörler arası "
-  "fark belirgindir: bankaların hiçbiri kuantum sonrası anahtar değişimini desteklemezken e-ticaret sitelerinin "
-  f"%80'i desteklemektedir (Fisher kesin testi, p = {R['banka_eticaret_fisher']['p']:.1e}). Bankaların yarısından "
-  "fazlası (%51,9) TLS 1.3'e bile geçmemiştir. Kamu sitelerinde destek tek bir siteyle sınırlıdır ve bu site bir "
-  "CDN arkasındadır.")
-P("Tarayıcı benzeri teklifte kuantum sonrası grubu seçmeyen 63 TLS 1.3 sunucusunun 62'si X25519'u seçmiştir. "
-  "Bir banka sitesi ise X25519'u desteklemediği için P-256 istemiş ve HelloRetryRequest göndermiştir; bu site "
-  "güncel tarayıcılarla her bağlantıda fazladan bir RTT (ölçüm ortamında ≈ 20 ms) harcamaktadır. Sertifika "
-  "tarafında sitelerin %91,5'i RSA (107'si 2048, 9'u 4096, 2'si 3072 bit), %8,5'i 256 bitlik ECDSA anahtarı "
-  "kullanmaktadır; kuantum sonrası imzalı sertifikaya rastlanmamıştır. Bu bulgu küresel ölçümlerle uyumludur "
-  "(Dubey ve Varshney, 2026).")
+P(f"Ölçülen sitelerin %{tr(T['pq'])}'i ({T['pq_k']}/{N}; %95 GA: %{tr(T['pq_ci'][0])}–%{tr(T['pq_ci'][1])}) kuantum "
+  f"sonrası anahtar değişimini desteklemektedir. Sitelerin %{tr(T['tls12'])}'i ({R['tls12_yalniz']} site) ise hâlâ "
+  "yalnızca TLS 1.2 kullanmaktadır ve kuantum sonrası geçiş için önce sürüm yükseltmesine ihtiyaç duymaktadır "
+  f"(Tablo {tsek}, Şekil {n_s1}). Sektörler arası fark belirgindir: en hazır sektör %{tr(en_yuksek['pq'])} ile "
+  f"{en_yuksek['sektor'].lower()}, en geride olanlar ise %{tr(B['pq'])} ile bankacılık ve %{tr(s['Kamu']['pq'])} ile "
+  f"kamudur (banka–e-ticaret karşılaştırması, Fisher kesin testi, p < {us(R['banka_eticaret_fisher']['p'])}). "
+  f"Bankaların yarısı (%{tr(B['tls12'])}) TLS 1.3'e bile geçmemiştir. Sağlık sektöründe özel hastane gruplarının "
+  "yaygın CDN kullanımı oranı yükseltirken, kritik altyapı sektöründe telekom, enerji ve savunma kurumlarının "
+  f"önemli bölümü TLS 1.2'de kalmıştır (%{tr(s['Kritik altyapı']['tls12'])}).")
+P(f"Tarayıcı benzeri teklifte kuantum sonrası grubu seçmeyen TLS 1.3 sunucularının "
+  f"{R['secilen_grup_tls13_pqsiz'].get('X25519', 0)}'i X25519'u, {R['secilen_grup_tls13_pqsiz'].get('prime256v1', 0)}'u "
+  f"P-256'yı seçmiştir. {n_hrr} site X25519'u desteklemediği için HelloRetryRequest göndermiştir; bu siteler güncel "
+  "tarayıcılarla her bağlantıda fazladan bir RTT (ölçüm ortamında ≈ 20 ms) harcamaktadır. Sertifika tarafında "
+  f"sitelerin %{tr(100 * n_rsa / N)}'i RSA, %{tr(100 * n_ec / N)}'i 256 bitlik ECDSA anahtarı kullanmaktadır; "
+  "kuantum sonrası imzalı sertifikaya rastlanmamıştır. Bu bulgu küresel ölçümlerle uyumludur (Dubey ve "
+  "Varshney, 2026).")
 H2("8.2. CDN Etkisi ve Katmanlı Analiz (Ölçüm)")
 n_cdn = sekil("sekil_cdn_etkisi.png", "CDN arkasındaki ve kendi sunucusunu işleten sitelerde kuantum sonrası "
                                       "destek oranı (%95 Wilson güven aralığıyla).", 11)
-P(f"Hazırlığın en güçlü belirleyicisi CDN kullanımıdır (Şekil {n_cdn}). CDN arkasındaki 31 sitenin 30'u (%96,8; "
-  "%95 GA: %83,8–%99,4) kuantum sonrası anahtar değişimini desteklerken kendi sunucusunu işleten 98 sitenin "
-  f"yalnızca 2'si (%2,0; %95 GA: %0,6–%7,1) desteklemektedir (Fisher kesin testi, p = "
-  f"{R['cdn_fisher']['p']:.1e}). CDN arkasındaki sitelerin 21'i Cloudflare, 5'i Amazon CloudFront, 4'ü Akamai "
-  "ve 1'i Imperva kullanmaktadır. Bu sınıflandırmada 29 site HTTP yanıt başlıklarıyla, 2 site ise IP adresinin "
-  "bilinen CDN adres bloklarına ait olmasıyla belirlenmiştir.")
+cdn_metin = ", ".join(f"{k} {v}" for k, v in sorted(R["cdn_saglayicilar"].items(), key=lambda x: -x[1]))
+P(f"Hazırlığın en güçlü belirleyicisi CDN kullanımıdır (Şekil {n_cdn}). CDN arkasındaki {cdn_n} sitenin {cdn_k}'si "
+  f"(%{tr(100 * cdn_k / cdn_n)}; %95 GA: %{tr(R['cdn_fisher']['cdn_ci'][0])}–%{tr(R['cdn_fisher']['cdn_ci'][1])}) kuantum "
+  f"sonrası anahtar değişimini desteklerken kendi sunucusunu işleten {oz_n} sitenin yalnızca {oz_k}'i "
+  f"(%{tr(100 * oz_k / oz_n)}; %95 GA: %{tr(R['cdn_fisher']['kendi_ci'][0])}–%{tr(R['cdn_fisher']['kendi_ci'][1])}) "
+  f"desteklemektedir (Fisher kesin testi, p < {us(R['cdn_fisher']['p'])}). CDN sağlayıcılarının dağılımı şöyledir: "
+  f"{cdn_metin}. Bu sınıflandırmada {R['cdn_kaynak'].get('başlık', 0)} site HTTP yanıt başlıklarıyla, "
+  f"{R['cdn_kaynak'].get('IP bloğu', 0)} site ise IP adresinin bilinen CDN adres bloklarına ait olmasıyla "
+  "belirlenmiştir.")
+P(f"CDN arkasında olup destek vermeyen {len(cdn_dis)} sitenin {n_cdn_tls12}'ü, CDN'leri TLS 1.3'ü desteklediği "
+  "hâlde yalnızca TLS 1.2 sunmaktadır; bu, kurum tarafındaki bir yapılandırma tercihinin CDN'nin sağladığı "
+  f"korumayı devre dışı bırakabildiğini göstermektedir. Kalan siteler ise yerli CDN sağlayıcısı Medianova "
+  f"arkasındadır: bu sağlayıcıyı kullanan sitelerin hiçbiri ({mn}) kuantum sonrası anahtar değişimini "
+  "desteklememektedir. Dolayısıyla \"CDN etkisi\" aslında **sağlayıcının varsayılan yapılandırmasının** "
+  "etkisidir.")
 P("Sektör farkının CDN kullanımından mı yoksa sektörün kendisinden mi kaynaklandığını sınamak için analiz CDN "
   "kullanımına göre katmanlandırılmıştır (Tablo 10). Katmansız analizde sektör ile kuantum sonrası destek "
-  f"arasında güçlü bir ilişki vardır (χ² = {tr(R['sektor_kikare_katmansiz']['chi2'], 2)}, p < 10⁻¹³). Ancak CDN "
-  "katmanları içinde sektör etiketleri 20 000 kez rastgele karıştırılarak yapılan permütasyon testinde bu ilişki "
-  f"kaybolmaktadır (p = {tr(R['sektor_permutasyon_cdn_katmanli']['p'], 2)}). Başka bir deyişle, aynı altyapıyı "
-  "kullanan bir banka ile bir e-ticaret sitesi arasında anlamlı bir fark yoktur; sektörel farkı altyapı tercihi "
-  "açıklamaktadır.")
-ks, kc = R["katman_kendi_sunucu"], R["katman_cdn"]
+  f"arasında güçlü bir ilişki vardır (χ² = {tr(R['sektor_kikare_katmansiz']['chi2'], 1)}, p < "
+  f"{us(R['sektor_kikare_katmansiz']['p'])}). CDN katmanları içinde sektör etiketleri 20 000 kez rastgele "
+  f"karıştırılarak yapılan permütasyon testinde ilişki büyük ölçüde zayıflamakla birlikte istatistiksel olarak "
+  f"anlamlı kalmaktadır (p = {tr(pk, 3)}). CDN arkasındaki sitelerde sektörden bağımsız olarak destek neredeyse "
+  "eksiksizdir; kalan fark kendi sunucusunu işleten kurumlardan gelmektedir. Bu grupta üniversiteler "
+  f"({ks['Üniversite']}) bankalardan ({ks['Banka']}; Fisher p = {tr(p_ub, 3)}) ve kamudan ({ks['Kamu']}; Fisher "
+  f"p = {tr(p_uk, 3)}) anlamlı biçimde öndedir.")
 tablo("CDN kullanımına göre katmanlanmış kuantum sonrası destek (destekleyen / toplam)", [
     ["Sektör", "Kendi sunucusu", "CDN arkasında"],
-    *[[k, ks[k], kc[k] if kc[k] != "0/0" else "–"] for k in ("Banka", "Kamu", "Üniversite", "E-ticaret")],
-    ["Toplam", "2/98", "30/31"]], genislikler=[4, 4, 4])
-P("CDN arkasında olup destek vermeyen tek site, CDN'nin TLS 1.3'ü desteklediği bilinmesine rağmen yalnızca "
-  "TLS 1.2 sunmaktadır; bu durum kurum tarafındaki bir yapılandırma tercihinin CDN'nin sağladığı korumayı devre "
-  "dışı bırakabildiğini göstermektedir. CDN kullanmadan destek veren iki site ise iki üniversiteye aittir ve kendi "
-  "sunucularında güncel bir TLS kütüphanesi kullanmaktadır; bu örnekler geçişin kendi sunucusunu işleten "
-  "kurumlar için de teknik olarak mümkün olduğunu göstermektedir.")
+    *[[k, ks[k], kc[k] if kc[k] != "0/0" else "–"] for k in ks],
+    ["Toplam", f"{oz_k}/{oz_n}", f"{cdn_k}/{cdn_n}"]], genislikler=[4, 4, 4])
+P("Bu sonuç geçişin **iki ayrı yoldan** ilerlediğini göstermektedir: (i) altyapı sağlayıcısının (CDN) özelliği "
+  "varsayılan olarak etkinleştirmesi ve (ii) kurumun kendi sunucusundaki TLS kütüphanesini güncellemesi. İkinci "
+  "yol özellikle üniversitelerde işlemektedir (Bölüm 8.6); bankalar ve kamu kurumları ise ikinci yolda da "
+  "geridedir.")
 H2("8.3. Ağ Maliyeti: Bayt ve Segment Analizi (Ölçüm)")
-tablo("Klasik ve hibrit el sıkışmanın mesaj boyutları (medyan, n = 32)", [
+tablo(f"Klasik ve hibrit el sıkışmanın mesaj boyutları (medyan, n = {ag['n']})", [
     ["Metrik", "Klasik (X25519)", "Hibrit (X25519MLKEM768)", "Artış"],
-    ["ClientHello (bayt)", "232", "1416", "6,1 kat (+1184)"],
-    ["ServerHello (bayt)", "122", "1210", "9,9 kat (+1088)"],
-    ["İstemcinin gönderdiği toplam", "—", "—", "+1184 B"],
-    ["İstemcinin aldığı toplam", f"{tr(ag['okunan_klasik'], 0)}", f"{tr(ag['okunan_hibrit'], 0)}", "+1088 B"],
-    ["Tarayıcı benzeri ClientHello (n = 129)", "—", "1529–1543 (medyan 1534)", "2 TCP segmenti"],
+    ["ClientHello (bayt)", tr(ag["ch_klasik"], 0), tr(ag["ch_hibrit"], 0), "6,1 kat (+1184)"],
+    ["ServerHello (bayt)", tr(ag["sh_klasik"], 0), tr(ag["sh_hibrit"], 0), "9,9 kat (+1088)"],
+    ["İstemcinin gönderdiği toplam", "—", "—", f"+{tr(ag['yazilan_fark'], 0)} B"],
+    ["Sunucu uçuşu / istemcinin aldığı toplam", f"{tr(ag['okunan_klasik'], 0)} ({sfk} segment)",
+     f"{tr(ag['okunan_hibrit'], 0)} ({sfh} segment)", f"+{tr(ag['okunan_fark'], 0)} B"],
+    [f"Tarayıcı benzeri ClientHello (n = {N})", "—",
+     f"{tr(ag['tarayici_ch_min'], 0)}–{tr(ag['tarayici_ch_max'], 0)} (medyan {tr(ag['tarayici_ch_medyan'], 0)})",
+     "2 TCP segmenti"],
 ], genislikler=[5.5, 3, 4, 3])
 n_boy = sekil("sekil_mesaj_boyutlari.png", "Klasik ve hibrit el sıkışmada mesaj boyutları. Kesikli çizgi, "
                                            "TLS başlıklarıyla birlikte tek bir TCP segmentine sığabilecek azami "
                                            "mesaj boyutunu (1451 B) göstermektedir.", 14)
 P(f"Hibrit anahtar değişimi her el sıkışmada 1184 + 1088 = 2272 bayt (≈ 2,3 KB) ek veri aktarımına yol "
   f"açmaktadır (Şekil {n_boy}). Bu artış ML-KEM-768'in sabit boyutlu kapsülleme anahtarından (1184 B) ve şifre "
-  "metninden (1088 B) kaynaklandığından ServerHello boyutu destek veren 32 sitenin tamamında 1210 bayt olarak sabit "
-  "çıkmıştır. Güncel tarayıcılar sunucunun hangi grubu desteklediğini bilmediğinden hem hibrit hem klasik anahtar "
-  "payını birlikte gönderir; tarayıcı benzeri ClientHello 129 sitenin tamamında MSS'i aşarak iki TCP "
-  "segmentine bölünmüştür.")
+  f"metninden (1088 B) kaynaklandığından ServerHello boyutu destek veren {ag['n']} sitenin tamamında 1210 bayt "
+  "olarak sabit çıkmıştır. Güncel tarayıcılar sunucunun hangi grubu desteklediğini bilmediğinden hem hibrit hem "
+  f"klasik anahtar payını birlikte gönderir; tarayıcı benzeri ClientHello {N} sitenin tamamında MSS'i aşarak iki "
+  "TCP segmentine bölünmüştür. 500 sitelik ölçümde ek olarak, sunucunun gönderdiği el sıkışma uçuşunun da medyan "
+  f"değerde {sfk} segmentten {sfh} segmente çıktığı görülmüştür; yani hibrit geçiş her iki yönde de birer segment "
+  "eklemektedir.")
 P("**Bant genişliği değerlendirmesi.** 2272 baytlık ek, ortalama 2 MB'lık bir web sayfasının yaklaşık %0,11'i "
   "kadardır ve TCP'nin ilk tıkanıklık penceresi olan 10 segmentin (Chu vd., 2013) içinde kaldığından normal "
   "koşullarda ek bir RTT gerektirmez. Ölçek açısından ise günde bir milyon yeni el sıkışma yapan bir sunucu için "
@@ -708,101 +792,104 @@ P("Klasik ClientHello 369 baytlık tek bir çerçevede taşınırken hibrit Clie
   "mesajları da görülmüştür; gerçek tarayıcı mesajlarının ek uzantılar nedeniyle ölçüm aracınınkinden de büyük "
   "olabildiği, dolayısıyla iki segment bulgusunun alt sınır niteliğinde olduğu anlaşılmaktadır.")
 H2("8.5. Gecikme ve Paket Kaybı Analizi (Ölçüm + Simülasyon)")
-P("**Ölçülen el sıkışma süresi.** Hibrit ile klasik el sıkışma arasındaki medyan süre farkı birinci turda "
-  f"+{tr(ag['sure_farki_medyan_tur1'], 2)} ms, ikinci turda {tr(ag['sure_farki_medyan_tur2'], 1)} ms "
-  f"bulunmuştur (n = 32). Farkın işaret değiştirmesi ve Wilcoxon işaretli sıra testinin anlamsız çıkması "
-  f"(p = {tr(ag['sure_wilcoxon_p'], 2)}), düşük kayıplı bir ev bağlantısında hibrit el sıkışmanın ölçülebilir bir "
-  "süre maliyeti olmadığını göstermektedir. ML-KEM işlemlerinin hesaplama süresi mikrosaniyeler düzeyinde "
-  "olduğundan bu sonuç beklenen bir sonuçtur. Süre ölçümü ayrıca s_client sürecinin başlatma yükünü (≈ 1 s) "
+P(f"**Ölçülen el sıkışma süresi.** Hibrit ile klasik el sıkışma arasındaki medyan süre farkı Kasım ölçümünde "
+  f"{'+' if ag['sure_farki_medyan_tur2'] >= 0 else ''}{tr(ag['sure_farki_medyan_tur2'], 1)} ms bulunmuştur "
+  f"(n = {ag['n']}; Wilcoxon işaretli sıra testi p = {tr(ag['sure_wilcoxon_p'], 2)}). Ekim turlarında bu fark "
+  f"+{tr(ag['sure_farki_medyan_tur1'], 2)} ms ve −1,1 ms olarak işaret değiştirmiştir. Düşük kayıplı bir ev "
+  "bağlantısında hibrit el sıkışmanın ölçülebilir bir süre maliyeti olmadığı söylenebilir; ML-KEM işlemlerinin "
+  "hesaplama süresi mikrosaniyeler düzeyindedir. Süre ölçümü ayrıca s_client sürecinin başlatma yükünü (≈ 1 s) "
   "içerdiğinden mutlak değerler yerine farklar yorumlanmıştır.")
-P("**Kayıplı kanal simülasyonu.** Sürenin kayıpsız ortamda değişmemesi, ek segmentin kayıplı kanallarda maliyetsiz "
-  "olduğu anlamına gelmez. Simülasyon sonuçları Tablo 13 ve Şekil 9'da verilmiştir.")
+P("**Kayıplı kanal simülasyonu.** Sürenin kayıpsız ortamda değişmemesi, ek segmentlerin kayıplı kanallarda "
+  "maliyetsiz olduğu anlamına gelmez. Simülasyon sonuçları Tablo 13 ve Şekil 9'da verilmiştir.")
 satirlar = [["Kayıp p", "Ort. süre klasik (ms)", "Ort. süre hibrit (ms)", "Ek süre", "Yeniden iletim olas. klasik",
              "Yeniden iletim olas. hibrit"]]
-for pk in (0.005, 0.01, 0.02, 0.05, 0.10):
-    a_, b_ = sim[("Klasik", pk)], sim[("Hibrit (tarayıcı)", pk)]
-    satirlar.append([f"%{tr(100 * pk)}", tr(a_["ortalama_ms"]), tr(b_["ortalama_ms"]),
+for pk_ in (0.005, 0.01, 0.02, 0.05, 0.10):
+    a_, b_ = sim[("Klasik", pk_)], sim[("Hibrit (tarayıcı)", pk_)]
+    satirlar.append([f"%{tr(100 * pk_)}", tr(a_["ortalama_ms"]), tr(b_["ortalama_ms"]),
                      f"+{tr(b_['ortalama_ms'] - a_['ortalama_ms'])} ms (%{tr(100 * (b_['ortalama_ms'] / a_['ortalama_ms'] - 1))})",
                      f"%{tr(100 * a_['gecikme_olasiligi'])}", f"%{tr(100 * b_['gecikme_olasiligi'])}"])
-tsim = tablo("Paket kaybı altında el sıkışma süresi – SİMÜLASYON (RTT = 20 ms, 40 000 tekrar)", satirlar,
-             genislikler=[1.7, 2.6, 2.6, 3.2, 2.7, 2.7], boyut=9,
-             not_="Değerler simülasyon sonucudur, ölçüm değildir. Model varsayımları Bölüm 7.5'tedir.")
+tablo("Paket kaybı altında el sıkışma süresi – SİMÜLASYON (RTT = 20 ms, 40 000 tekrar)", satirlar,
+      genislikler=[1.7, 2.6, 2.6, 3.2, 2.7, 2.7], boyut=9,
+      not_="Değerler simülasyon sonucudur, ölçüm değildir. Model varsayımları Bölüm 7.5'tedir.")
 n_sim = sekil("sekil_simulasyon_kayip.png", "Simülasyon: segment kayıp oranına göre ortalama el sıkışma süresi ve "
                                             "en az bir yeniden iletim olasılığı (noktalar: Monte Carlo, çizgiler: "
                                             "analitik model).", 16)
-k10 = (sim[("Klasik", 0.10)], sim[("Hibrit (tarayıcı)", 0.10)])
-k01 = (sim[("Klasik", 0.01)], sim[("Hibrit (tarayıcı)", 0.01)])
 P(f"Simülasyonda yeniden iletim olasılığı analitik modelle neredeyse birebir örtüşmektedir (Şekil {n_sim}). "
-  f"ClientHello'nun ikinci segmenti, %1 kayıpta yeniden iletim olasılığını %{tr(100 * k01[0]['gecikme_olasiligi'])}'den "
+  f"Hibrit geçişin eklediği iki segment, %1 kayıpta yeniden iletim olasılığını %{tr(100 * k01[0]['gecikme_olasiligi'])}'den "
   f"%{tr(100 * k01[1]['gecikme_olasiligi'])}'e, %10 kayıpta %{tr(100 * k10[0]['gecikme_olasiligi'])}'den "
   f"%{tr(100 * k10[1]['gecikme_olasiligi'])}'e çıkarmaktadır. Bir yeniden iletim en az RTO (≈ 220 ms) kadar "
-  f"bekleme getirdiğinden ortalama süre %10 kayıpta {tr(k10[0]['ortalama_ms'])} ms'den "
-  f"{tr(k10[1]['ortalama_ms'])} ms'ye (+%{tr(100 * (k10[1]['ortalama_ms'] / k10[0]['ortalama_ms'] - 1))}) "
-  f"yükselmektedir. RTT = 65 ms'de (yurt dışındaki uç sunucular) aynı karşılaştırma "
+  f"bekleme getirdiğinden ortalama süre %10 kayıpta {tr(k10[0]['ortalama_ms'])} ms'den {tr(k10[1]['ortalama_ms'])} "
+  f"ms'ye (+%{tr(art(k10[0], k10[1]))}) yükselmektedir. RTT = 65 ms'de aynı karşılaştırma "
   f"{tr(sim65[('Klasik', 0.10)]['ortalama_ms'])} ms'ye karşı {tr(sim65[('Hibrit (tarayıcı)', 0.10)]['ortalama_ms'])} "
-  "ms vermektedir. Etki, kayıpsız kablolu ağlarda ihmal edilebilir; ancak kayıplı mobil, kırsal veya uydu "
+  "ms vermektedir. Etki kayıpsız kablolu ağlarda ihmal edilebilir; ancak kayıplı mobil, kırsal veya uydu "
   "bağlantılarında ve kuyruk gecikmesine duyarlı uygulamalarda dikkate alınmalıdır.")
-P("Önemli bir sonuç da üçüncü senaryodan çıkmaktadır: tarayıcı, sunucunun hibrit grubu desteklemediğini "
+P("Üçüncü senaryo da önemli bir sonuç vermektedir: tarayıcı, sunucunun hibrit grubu desteklemediğini "
   "bilmediğinden iki anahtar payını yine gönderir. Bu nedenle **hibrit desteklemeyen sunuculara bağlanan "
-  "kullanıcılar ek segmentin gecikme maliyetini koruma elde etmeden ödemektedir** (Tablo 13'teki hibrit sütunu "
-  "ile neredeyse aynı değerler). Sunucuların geçişi geciktirmesi bu maliyeti karşılıksız bırakmaktadır.")
-H2("8.6. Ölçümlerin Tutarlılığı")
-tablo("İki ölçüm turunun karşılaştırılması (n = 129)", [
-    ["Metrik", "1. tur", "2. tur"],
-    ["Kuantum sonrası destek", "32 (%24,8)", "32 (%24,8)"],
-    ["TLS 1.3 desteği", "95 (%73,6)", "95 (%73,6)"],
-    ["CDN arkasında / destekli", "31 / 30", "31 / 30"],
-    ["HTTP/3 ilanı", "15", "15"],
-    ["Hibrit ServerHello (bayt)", "1210", "1210"],
-    ["Medyan TCP RTT (ms)", tr(ag["rtt_medyan_tur1"]), tr(ag["rtt_medyan_tur2"])],
-    ["Medyan süre farkı hibrit − klasik (ms)", f"+{tr(ag['sure_farki_medyan_tur1'], 2)}",
-     tr(ag["sure_farki_medyan_tur2"])],
-], genislikler=[7, 4, 4])
-n_rtt = sekil("sekil_rtt_turlar.png", "İki ölçüm turunda site bazında TCP RTT değerleri.", 9.5)
-P("129 sitenin tamamında TLS sürümü, kuantum sonrası destek, seçilen anahtar değişim grubu, HelloRetryRequest "
-  "davranışı, TLS 1.2 kabulü ve sertifika anahtar türü ile uzunluğu iki turda birebir aynı çıkmıştır. 16 sitenin "
-  "IP adresi turlar arasında değişmiştir; bunların 13'ü CDN arkasındadır ve değişim CDN'nin kullanıcıyı farklı uç "
-  "sunuculara yönlendirmesinden kaynaklanmaktadır. Bu sitelerin hiçbirinde sonuç değişmemiştir. Ağ gecikmesi "
-  f"turlar arasında doğal olarak dalgalanmış, site bazındaki RTT değerleri arasındaki korelasyon "
-  f"{tr(R['tutarlilik']['rtt_pearson'], 2)}, ortalama mutlak fark {tr(R['tutarlilik']['rtt_ort_mutlak_fark'])} ms "
-  f"olmuştur (Şekil {n_rtt}).")
+  f"kullanıcılar ek ClientHello segmentinin maliyetini koruma elde etmeden ödemektedir** (%10 kayıpta "
+  f"{tr(k10[2]['ortalama_ms'])} ms, klasiğe göre +%{tr(art(k10[0], k10[2]))}).")
+H2("8.6. Tutarlılık ve Zaman İçindeki Değişim")
+tablo("Ölçüm turlarının karşılaştırılması (ilk 130 site)", [
+    ["Metrik", "1. tur (7 Eki)", "2. tur (8 Eki)", "3. tur (22 Kas)"],
+    ["Ortak ölçülen site", "129", "129", str(Z["ortak"])],
+    ["Kuantum sonrası destek", "32", "32", str(Z["pq_kasim"])],
+    ["TLS 1.3 desteği", "95", "95", str(Z["tls13_kasim"])],
+    ["Hibrit ServerHello (bayt)", "1210", "1210", "1210"],
+    ["Medyan TCP RTT (ms)", tr(ag["rtt_medyan_tur1"]), tr(ag["rtt_medyan_tur2"]), tr(ag["rtt_medyan_tur3"])],
+], genislikler=[5.5, 3.3, 3.3, 3.4], not_="3. turda ilk 130 siteden bir kısmına ulaşılamadığı için ortak site sayısı "
+                                         "daha düşüktür; karşılaştırma her iki turda da ölçülen siteler üzerindendir.")
+n_rtt = sekil("sekil_rtt_turlar.png", "Ekim ayındaki iki ölçüm turunda site bazında TCP RTT değerleri.", 9.5)
+P("**Kısa vadeli tutarlılık.** Ekim ayında 1,5–3 saat arayla yapılan iki turda 129 sitenin tamamında TLS sürümü, "
+  "kuantum sonrası destek, seçilen grup, HelloRetryRequest davranışı, TLS 1.2 kabulü ve sertifika bilgisi birebir "
+  f"aynı çıkmıştır. {TU['ip_degisen']} sitenin IP adresi turlar arasında değişmiş, ancak sonuç değişmemiştir; site "
+  f"bazında RTT korelasyonu {tr(TU['rtt_pearson'], 2)} olmuştur (Şekil {n_rtt}).")
+P(f"**Altı haftalık değişim.** 8 Ekim ile 22 Kasım arasında, iki turda da ölçülen {Z['ortak']} sitede kuantum "
+  f"sonrası destek {Z['pq_ekim']}'den {Z['pq_kasim']}'e yükselmiştir. {Z['pq_kazanan']} site desteğe geçmiş, "
+  f"{Z['pq_kaybeden']} site desteği kaybetmiştir; {Z['tls_yukselten']} site TLS 1.2'den TLS 1.3'e yükselmiştir. " +
+  (f"Desteğe geçen sitelerin tamamı" if Z['kazanan_kendi_sunucu'] == Z['pq_kazanan'] else
+   f"Desteğe geçen {Z['pq_kazanan']} sitenin {Z['kazanan_kendi_sunucu']}'i") +
+  f" CDN kullanmayan, kendi sunucusunu işleten kurumlardır ve bunların {uni_kaz}'sı üniversitedir; desteği "
+  "kaybeden site ise CDN'den kendi sunucusuna geçen bir kurumdur. Bu gözlem, Bölüm 8.2'de tanımlanan ikinci yolun (sunucu kütüphanesi güncellemesi) gerçek zamanlı "
+  "olarak işlediğini ve altyapı değişikliklerinin korumayı geri de alabildiğini göstermektedir.")
 H2("8.7. Tartışma ve Küresel Karşılaştırma")
-P("**Hazırlık kurumsal bir karardan çok altyapı tercihinin sonucudur.** Katmanlı analiz, Türkiye'deki kuantum "
-  "sonrası geçişin kurumların bilinçli kararından çok CDN sağlayıcılarının özelliği varsayılan olarak "
-  "etkinleştirmesiyle ilerlediğini göstermektedir. Bu bulgu, Cloudflare dışındaki sitelerde hazırlığın %54'ten "
-  "%22'ye düştüğünü raporlayan F5 Labs (2026) ölçümüyle ve dağıtımın az sayıda sağlayıcıda yoğunlaştığını bulan BK "
-  "çalışmasıyla tutarlıdır. Bunun iki sonucu vardır: CDN kullanan kurumlar korumayı ayrı bir çaba harcamadan elde "
-  "etmekte, ancak bu koruma yalnızca kullanıcı ile CDN arasındaki bağlantıyı kapsamaktadır.")
-P("**Bankacılık paradoksu.** \"Şimdi topla, sonra çöz\" tehdidine en fazla maruz kalan veriler finansal "
-  "verilerdir; ancak bankacılık ölçülen sektörler arasında en geride kalan sektördür. Bankaların kendi "
-  "altyapılarını işletme eğilimi ve geçişlerin uzun test ve onay süreçlerine tabi olması bu durumu "
-  "açıklayabilecek olası nedenlerdir. Bankaların yarısından fazlasının TLS 1.3'e bile geçmemiş olması, kuantum "
-  "sonrası geçişin önünde önce bir protokol sürümü yükseltmesi bulunduğunu göstermektedir.")
-P("**Küresel karşılaştırma.** Örneklemdeki %24,8'lik destek oranı, en popüler bir milyon sitede %54 "
+P("**Hazırlık büyük ölçüde altyapı tercihinin sonucudur.** CDN arkasındaki sitelerin neredeyse tamamı hazırken, "
+  "kendi sunucusunu işletenlerde destek tek haneli düzeydedir. Bu bulgu, Cloudflare dışındaki sitelerde "
+  "hazırlığın %54'ten %22'ye düştüğünü raporlayan F5 Labs (2026) ölçümüyle ve dağıtımın az sayıda sağlayıcıda "
+  "yoğunlaştığını bulan BK çalışmasıyla tutarlıdır. Ancak CDN yalnızca sağlayıcı varsayılan olarak etkinleştirdiğinde "
+  "koruma sağlamaktadır: yerli sağlayıcının arkasındaki sitelerde destek görülmemiştir. Ayrıca CDN'in sağladığı "
+  "koruma yalnızca kullanıcı ile CDN arasındaki bağlantıyı kapsamaktadır.")
+P(f"**Bankacılık paradoksu.** \"Şimdi topla, sonra çöz\" tehdidine en fazla maruz kalan veriler finansal "
+  f"verilerdir; ancak bankacılık, ölçülen sektörler arasında en geride kalan sektördür ({B['pq_k']}/{B['n']}). "
+  f"Bankaların yalnızca {kesir(kc['Banka'])[1] if kc['Banka'] != '0/0' else 0}'si CDN kullanmakta, kendi "
+  f"sunucusunu işleten {b_n} bankanın hiçbiri desteğe geçmemiş ve yarısı TLS 1.3'e bile yükselmemiştir. Aynı "
+  "dönemde sigorta, ödeme ve e-para kuruluşlarının önemli bölümünün hazır olması, sorunun teknik değil kurumsal "
+  "olduğuna işaret etmektedir.")
+P(f"**Küresel karşılaştırma.** Örneklemdeki %{tr(T['pq'])}'lik destek oranı, en popüler bir milyon sitede %54 "
   "(F5 Labs, 2026) ve alan adlarının yaklaşık yarısında hibrit destek bulan küresel ölçümlerin (Dubey ve "
-  "Varshney, 2026) altındadır. Ancak örneklem kendi altyapısını işletme eğilimi yüksek finans ve kamu sitelerine "
-  "ağırlık verdiğinden karşılaştırma örneklem farkları göz önünde bulundurularak yorumlanmalıdır. Türkiye'deki "
-  "yalnız TLS 1.2 oranı (%26,4), F5 Labs'in küresel olarak raporladığı %10,5'in belirgin biçimde üzerindedir.")
+  "Varshney, 2026) altındadır. CDN dışındaki sitelerde ise fark daha belirgindir (Türkiye %"
+  f"{tr(100 * oz_k / oz_n)}, dünya %22). Türkiye'deki yalnız TLS 1.2 oranı (%{tr(T['tls12'])}), F5 Labs'in küresel "
+  "olarak raporladığı %10,5'in yaklaşık 2,6 katıdır. Örneklem kendi altyapısını işletme eğilimi yüksek kamu ve "
+  "finans sitelerine ağırlık verdiğinden karşılaştırma örneklem farkları göz önünde bulundurularak "
+  "yorumlanmalıdır.")
 
 # ---------------------------------------------------------------------------
 # 9. SINIRLILIKLAR
 # ---------------------------------------------------------------------------
 H1("9. SINIRLILIKLAR")
-madde(["**Örneklem:** Veri seti 130 siteden oluşmaktadır ve sektörlerin tamamını temsil etmemektedir; özellikle "
-       "kamu ve üniversite sektörlerinde site sayısının artırılması genellenebilirliği güçlendirecektir.",
-       "**Tek ölçüm noktası ve kısa zaman aralığı:** Ölçümler tek bir ev bağlantısından ve 1,5–3 saat arayla "
-       "yapılmıştır; tutarlılık sınaması kısa vadeli kararlılığı göstermektedir. CDN'ler kullanıcıyı konuma göre "
+madde([f"**Örneklem:** Veri seti {N_LISTE} siteden oluşmaktadır; sektörlerin tamamını temsil etmemekle birlikte "
+       "her sektörde ana kurumları kapsamaktadır. Sağlık ve kritik altyapı sektörlerinde site sayısı görece azdır.",
+       "**Tek ölçüm noktası:** Tüm ölçümler tek bir ev bağlantısından yapılmıştır. CDN'ler kullanıcıyı konuma göre "
        "farklı sunuculara yönlendirebildiğinden farklı ağlardan farklı sonuçlar alınabilir.",
        "**Yalnız ana sayfa:** İnternet bankacılığı veya ödeme sayfaları gibi alt alan adları farklı bir altyapıda "
        "çalışıyor olabilir.",
        "**Süre ölçümünün hassasiyeti:** El sıkışma süreleri s_client sürecinin duvar saati süresiyle ölçülmüştür ve "
        "Windows'ta yaklaşık 1 s sabit yük içermektedir; bu nedenle ağ maliyeti bayt ve segment düzeyinde, kayıp "
-       "etkisi ise simülasyonla değerlendirilmiştir.",
+       "etkisi ise simülasyonla değerlendirilmiştir. Kasım turunda paralel ölçüm yapılması süre ölçümlerine küçük "
+       "bir yerel gürültü eklemiş olabilir; bayt ve destek sonuçları bundan etkilenmez.",
        "**Simülasyon varsayımları:** Bağımsız Bernoulli kaybı, ACK kayıplarının ve hızlı yeniden iletimin "
        "modellenmemesi gerçek ağlardaki ardışık (burst) kayıpları tam yansıtmayabilir. Simülasyon sonuçları "
        "kontrollü bir ağ emülasyonu deneyiyle doğrulanmalıdır (Bölüm 10).",
-       "**CDN tespiti:** Başlık ve adres bloğuna dayalı yöntemin tanımadığı yerel CDN veya ters vekil sunucular "
-       "\"kendi sunucusu\" olarak sınıflandırılmış olabilir.",
+       "**CDN tespiti:** Başlık ve iyi bilinen adres bloklarına dayalı yöntemin tanımadığı bulut yük dengeleyicileri "
+       "veya ters vekil sunucular \"kendi sunucusu\" olarak sınıflandırılmış olabilir.",
        "**Kaynak sunucu bağlantısı:** CDN ile kurumun kaynak sunucusu arasındaki bağlantı dışarıdan "
        "gözlemlenemediğinden ölçülememiştir."])
 
@@ -810,38 +897,39 @@ madde(["**Örneklem:** Veri seti 130 siteden oluşmaktadır ve sektörlerin tama
 # 10. SONUÇ
 # ---------------------------------------------------------------------------
 H1("10. SONUÇ VE ÖNERİLER")
-P("Bu projede Türkiye'de dört kritik sektöre ait 129 web sitesinin kuantum sonrası TLS hazırlığı açık bir ölçüm "
-  "sistemiyle iki tur hâlinde ölçülmüş, geçişin ağ maliyeti ölçüm, paket yakalama ve simülasyonla incelenmiştir. "
-  "Sitelerin dörtte biri hibrit X25519MLKEM768 anahtar değişimini desteklemekte, ancak bu destek neredeyse "
-  "tamamen CDN arkasındaki sitelerden gelmektedir. CDN kullanımı sabit tutulduğunda sektörler arasındaki fark "
-  "ortadan kalkmaktadır. Kendi sunucusunu işleten bankalar ve kamu kurumları belirgin biçimde geridedir; "
-  "bankaların hiçbiri hazır değildir ve yarısı hâlâ TLS 1.2 kullanmaktadır. Ağ düzeyinde hibrit anahtar "
-  "değişimi el sıkışma başına yaklaşık 2,3 KB ek veri getirmekte ve tarayıcı ClientHello mesajını iki TCP "
-  "segmentine bölmektedir. Bu ek segment kayıpsız ortamda ölçülebilir bir gecikme yaratmazken, %1–10 kayıplı "
-  "kanallarda ortalama el sıkışma süresini simülasyona göre %1,5–7 artırmaktadır.")
-P("**Mühendislik katkısı ve özgün yönler:** (i) Türkiye'ye özgü ilk sektörel kuantum sonrası TLS ölçümü, "
-  "(ii) hazırlığın belirleyicisinin katmanlı istatistikle ortaya konması, (iii) hazırlık ölçümü ile katmanlar "
-  "arası ağ maliyetinin (TLS → TCP segmenti → Ethernet çerçevesi) aynı veri setinde birleştirilmesi ve "
-  "(iv) kurumların kendi durumunu ölçebileceği açık, Docker ile taşınabilir bir araç.")
+P(f"Bu projede Türkiye'de {N_SEK} kritik sektöre ait {N} web sitesinin kuantum sonrası TLS hazırlığı açık bir "
+  "ölçüm sistemiyle ölçülmüş, geçişin zaman içindeki ilerleyişi izlenmiş ve ağ maliyeti ölçüm, paket yakalama ve "
+  f"simülasyonla incelenmiştir. Sitelerin yaklaşık dörtte biri (%{tr(T['pq'])}) hibrit X25519MLKEM768 anahtar "
+  "değişimini desteklemektedir. Destek ağırlıklı olarak CDN arkasındaki sitelerden gelmekle birlikte, kendi "
+  "sunucusunu güncelleyen kurumlar (özellikle üniversiteler) ikinci bir geçiş yolu oluşturmaktadır. Bankalar ve "
+  "kamu kurumları belirgin biçimde geridedir. Ağ düzeyinde hibrit anahtar değişimi el sıkışma başına yaklaşık "
+  "2,3 KB ek veri getirmekte, istemci ve sunucu yönünde birer TCP segmenti eklemektedir. Bu ek segmentler "
+  f"kayıpsız ortamda ölçülebilir bir gecikme yaratmazken, %1–10 kayıplı kanallarda ortalama el sıkışma süresini "
+  f"simülasyona göre %{tr(art(k01[0], k01[1]))}–{tr(art(k10[0], k10[1]))} artırmaktadır.")
+P("**Mühendislik katkısı ve özgün yönler:** (i) Türkiye'ye özgü, yedi sektörü kapsayan ilk kuantum sonrası TLS "
+  "ölçümü ve altı haftalık zaman içi izleme, (ii) hazırlığın iki ayrı geçiş yolunun (CDN ve sunucu güncellemesi) "
+  "katmanlı istatistikle ayrıştırılması, (iii) hazırlık ölçümü ile katmanlar arası ağ maliyetinin (TLS → TCP "
+  "segmenti → Ethernet çerçevesi) aynı veri setinde birleştirilmesi ve (iv) kurumların kendi durumunu "
+  "ölçebileceği açık, paralel çalışabilen ve Docker ile taşınabilir bir araç.")
 P("Bulgular ışığında şu öneriler sunulmaktadır:")
 madde(["Kendi sunucusunu işleten kurumlar öncelikle TLS 1.3'e geçmeli, ardından TLS kütüphanelerini "
        "X25519MLKEM768'i varsayılan olarak destekleyen sürümlere (ör. OpenSSL 3.5 ve sonrası) güncellemelidir. "
-       "Ölçülen iki üniversite bunun CDN olmadan da mümkün olduğunu göstermektedir.",
+       "Altı haftada geçiş yapan üniversiteler bunun CDN olmadan da kısa sürede mümkün olduğunu göstermektedir.",
        "Finans sektörü için düzenleyici kurumların kuantum sonrası geçişe yönelik bir yol haritası ve takvim "
        "belirlemesi, sektördeki gecikmeyi azaltabilir.",
-       "CDN kullanan kurumlar, CDN ile kendi kaynak sunucuları arasındaki bağlantının da kuantum sonrası korumaya "
-       "kavuşturulmasını gündemlerine almalıdır.",
+       "CDN kullanan kurumlar, sağlayıcılarının kuantum sonrası anahtar değişimini destekleyip desteklemediğini "
+       "kontrol etmeli ve CDN ile kendi kaynak sunucuları arasındaki bağlantıyı da korumaya almalıdır.",
        "Ağ yöneticileri, büyüyen ve parçalanan ClientHello mesajlarını doğru işlemeyen eski güvenlik duvarı ve TLS "
-       "denetim cihazlarını güncellemeli; yüksek kayıplı erişim ağlarında ek segmentin kuyruk gecikmesine etkisini "
-       "izlemelidir."], numarali=True)
+       "denetim cihazlarını güncellemeli; yüksek kayıplı erişim ağlarında ek segmentlerin kuyruk gecikmesine "
+       "etkisini izlemelidir."], numarali=True)
 H2("Gelecek Çalışmalar ve Planlanan Doğrulama Deneyi")
 P("Simülasyon sonuçlarını doğrulamak için şu deney planlanmıştır: Linux üzerinde OpenSSL 3.5+ ile yerel bir TLS "
   "sunucusu (openssl s_server) kurulacak, istemci ile sunucu arasındaki arayüzün MTU değeri 1500 B'a ayarlanacak "
   "ve tc qdisc add dev <arayüz> root netem delay 10ms loss p% komutuyla 20 ms RTT ve %0–10 kayıp oranları "
   "uygulanacaktır. Her koşulda klasik, hibrit ve tarayıcı benzeri teklifle 1000'er el sıkışma yapılarak süre "
   "dağılımı, ortalama ve 95. yüzdelik değerler Tablo 13'teki beklenen değerlerle karşılaştırılacaktır. Bunun "
-  "yanında ölçümün düzenli aralıklarla tekrarlanarak Türkiye'deki geçiş hızının izlenmesi, örneklemin internet "
-  "bankacılığı ve e-Devlet hizmetleri gibi alt alan adlarını kapsayacak şekilde genişletilmesi ve farklı ISS'lerden "
+  "yanında ölçümün aylık aralıklarla tekrarlanarak Türkiye'deki geçiş hızının izlenmesi, örneklemin internet "
+  "bankacılığı ve e-Devlet hizmetleri gibi alt alan adlarını kapsayacak şekilde genişletilmesi ve farklı İSS'lerden "
   "ölçüm yapılması planlanmaktadır. Sistem, aynı mimariyle SMTP (STARTTLS) ve QUIC/HTTP3 gibi farklı haberleşme "
   "protokollerine de uyarlanabilir.")
 
@@ -850,15 +938,17 @@ P("Simülasyon sonuçlarını doğrulamak için şu deney planlanmıştır: Linu
 # ---------------------------------------------------------------------------
 H1("YAPAY ZEKÂ ARAÇLARININ KULLANIMINA İLİŞKİN BEYAN")
 P("Bu projede üretken yapay zekâ aracı olarak Claude (Anthropic) kullanılmıştır. Araç; ölçüm ve analiz "
-  "betiklerinin geliştirilmesinde, ek istatistiksel analizlerin (Wilson güven aralığı, katmanlı permütasyon "
-  "testi) ve paket kaybı simülasyonunun kodlanmasında, teknik diyagramların ve grafiklerin üretilmesinde, "
-  "paket yakalama dosyasının programla yeniden ayrıştırılmasında, kaynakların varlığının ve künyelerinin "
-  "kontrolünde ve raporun ders yönergesine göre yapılandırılıp yazılmasında destek amacıyla kullanılmıştır.")
-P("Ölçümler öğrenci tarafından kendi bilgisayarında ve ağında gerçekleştirilmiştir. Raporda verilen tüm sayısal "
-  "sonuçlar ham ölçüm dosyalarından (sonuclar_1.csv, sonuclar_2.csv, trendyol_klasik_hibrit.pcapng) teslim edilen "
-  "kodlarla yeniden hesaplanabilmektedir. Simülasyon sonuçları ölçüm sonuçlarından açıkça ayrılmış ve "
-  "varsayımları belirtilmiştir. Kodların, hesaplamaların ve kaynakların doğruluğu öğrenci tarafından kontrol "
-  "edilmiştir; projenin bilimsel ve akademik sorumluluğu öğrenciye aittir.")
+  "betiklerinin geliştirilmesinde (paralel ölçüm modu ve DNS ön kontrol betiği dâhil), genişletilmiş site "
+  "listesinin derlenmesinde, ek istatistiksel analizlerin (Wilson güven aralığı, katmanlı permütasyon testi) ve "
+  "paket kaybı simülasyonunun kodlanmasında, teknik diyagramların ve grafiklerin üretilmesinde, paket yakalama "
+  "dosyasının programla yeniden ayrıştırılmasında, kaynakların varlığının ve künyelerinin kontrolünde ve raporun "
+  "ders yönergesine göre yapılandırılıp yazılmasında destek amacıyla kullanılmıştır.")
+P("Ölçümler öğrenci tarafından kendi bilgisayarında ve ağında gerçekleştirilmiştir; yapay zekâ tarafından "
+  "derlenen site listesi ölçümden önce DNS'te doğrulanmış ve hatalı girdiler düzeltilmiştir. Raporda verilen tüm "
+  "sayısal sonuçlar ham ölçüm dosyalarından (sonuclar_1.csv, sonuclar_2.csv, sonuclar_3.csv, "
+  "trendyol_klasik_hibrit.pcapng) teslim edilen kodlarla yeniden hesaplanabilmektedir. Simülasyon sonuçları ölçüm "
+  "sonuçlarından açıkça ayrılmış ve varsayımları belirtilmiştir. Kodların, hesaplamaların ve kaynakların doğruluğu "
+  "öğrenci tarafından kontrol edilmiştir; projenin bilimsel ve akademik sorumluluğu öğrenciye aittir.")
 
 # ---------------------------------------------------------------------------
 # KAYNAKÇA (APA 7)
@@ -929,8 +1019,10 @@ tablo("Teslim edilen teknik dosyalar", [
     ["kod/analiz_ek.py", "Güven aralıkları, Fisher/permütasyon testleri, ağ maliyeti, kayıp simülasyonu"],
     ["kod/diyagramlar.py", "Mimari, sıra, katman, paket yapısı ve akış diyagramları"],
     ["kod/Dockerfile, README.md", "OpenSSL 3.5 hazır ortam ve kullanım kılavuzu"],
-    ["veri/siteler.csv", "130 sitelik ölçüm listesi"],
-    ["veri/sonuclar_1.csv, sonuclar_2.csv, pilot.csv", "Ham ölçüm sonuçları (iki tur ve pilot)"],
+    ["kod/dns_kontrol.py, kod/liste_olustur.py", "Site listesinin oluşturulması ve DNS ön kontrolü"],
+    ["kod/rapor_olustur.py, kod/sunum_olustur.py", "Rapor (.docx) ve sunumun (.pptx) veriden üretilmesi"],
+    ["veri/siteler.csv, veri/siteler_500.csv", "130 ve 500 sitelik ölçüm listeleri"],
+    ["veri/sonuclar_1.csv, sonuclar_2.csv, sonuclar_3.csv, pilot.csv", "Ham ölçüm sonuçları (üç tur ve pilot)"],
     ["veri/trendyol_klasik_hibrit.pcapng", "Wireshark paket yakalama dosyası"],
     ["analiz/ek_analiz.json, simulasyon.csv", "Ek analiz ve simülasyon çıktıları"],
     ["sekiller/*.png", "Rapor ve sunumdaki tüm şekiller"],

@@ -50,6 +50,12 @@ def tr(x, b=1):
     return f"{x:.{b}f}".replace(".", ",")
 
 
+def us(p):
+    import math
+    e = math.floor(math.log10(p)) + 1 if p > 0 else -300
+    return "10" + str(e).translate(str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹"))
+
+
 # --- Temel çizim yardımcıları ----------------------------------------------------------
 def yazi(sl, x, y, w, h, metin, boyut=18, renk=LACI, kalin=False, hiza=PP_ALIGN.LEFT, dikey=MSO_ANCHOR.TOP,
          font=None, aralik=6, satir=1.0):
@@ -647,11 +653,14 @@ buyuk_sayi(sl, Cm(22.4), Cm(13.2), Cm(9.8), f"%{tr(en_iyi['pq'], 0)} vs %{tr(en_
 # =====================================================================================
 # 15. BULGU 2: CDN
 # =====================================================================================
-sl = slayt("Bulgu 2 · Belirleyici sektör değil, altyapı (CDN)", bolum="Ölçülen sonuçlar", notlar=(
-    f"En önemli bulgu bu. CDN arkasındaki {cdn_n} sitenin {cdn_k}'i hazır; kendi sunucusunu işleten {oz_n} siteden "
-    f"sadece {oz_k}'si hazır. Sonra şunu sordum: banka olmak mı önemli, altyapı mı? CDN kullanımını sabit tutup "
-    "sektör etiketlerini 20 bin kez karıştırdım; sektör farkı kayboldu. Yani geçiş kurumların kararıyla değil, "
-    "altyapı sağlayıcıları sayesinde ilerliyor."))
+ks, kc = R["katman_kendi_sunucu"], R["katman_cdn"]
+sl = slayt("Bulgu 2 · En güçlü belirleyici: CDN altyapısı", bolum="Ölçülen sonuçlar", notlar=(
+    f"En önemli bulgu bu. CDN arkasındaki {cdn_n} sitenin {cdn_k}'si hazır; kendi sunucusunu işleten {oz_n} siteden "
+    f"sadece {oz_k}'i hazır. Sonra şunu sordum: banka olmak mı önemli, altyapı mı? CDN kullanımını sabit tutup "
+    "sektör etiketlerini 20 bin kez karıştırdım. Fark büyük ölçüde azaldı ama tamamen kaybolmadı: kendi sunucusunu "
+    f"işleten kurumlar arasında üniversiteler ({ks['Üniversite']}) öne çıkıyor, bankalarda ({ks['Banka']}) hiç yok. "
+    f"Ayrıca CDN'in kendisi de önemli: yerli CDN Medianova arkasındaki sitelerin hiçbiri ({R['cdn_pq'].get('Medianova', '0/0')}) "
+    "hazır değil. Yani belirleyici olan, sağlayıcının özelliği varsayılan olarak açıp açmadığı."))
 for i, (pay, payda, et, r, z) in enumerate(((cdn_k, cdn_n, "CDN arkasındaki siteler", YESIL, YESIL_A),
                                             (oz_k, oz_n, "Kendi sunucusunu işletenler", MERCAN, MERCAN_A))):
     x = Cm(1.6 + i * 8.0)
@@ -669,10 +678,11 @@ for i, (pay, payda, et, r, z) in enumerate(((cdn_k, cdn_n, "CDN arkasındaki sit
 kart(sl, Cm(1.6), Cm(13.0), Cm(15.5), Cm(4.4), LACI, None)
 yazi(sl, Cm(2.2), Cm(13.3), Cm(14.5), Cm(0.8), "İSTATİSTİKSEL SINAMA", 11, NANE, True)
 yazi(sl, Cm(2.2), Cm(14.1), Cm(14.5), Cm(3.2), [
-    "CDN vs kendi sunucu: Fisher **p < 10⁻²⁵**",
-    f"Katmansız sektör etkisi: χ² = {tr(R['sektor_kikare_katmansiz']['chi2'], 1)}, p < 10⁻¹⁰",
-    f"CDN'e göre katmanlı: **p = {tr(R['sektor_permutasyon_cdn_katmanli']['p'], 2)}** → fark kaybolur"], 14, BEYAZ,
-     aralik=3)
+    f"CDN vs kendi sunucu: Fisher **p < {us(R['cdn_fisher']['p'])}**",
+    f"Sektör etkisi, katmansız: χ² = {tr(R['sektor_kikare_katmansiz']['chi2'], 1)}, p < {us(R['sektor_kikare_katmansiz']['p'])}",
+    f"CDN'e göre katmanlı: **p = {tr(R['sektor_permutasyon_cdn_katmanli']['p'], 3)}** → azalır, sürer",
+    f"Yerli CDN (Medianova): **{R['cdn_pq'].get('Medianova', '0/0')}** hazır"], 13, BEYAZ,
+     aralik=2)
 # katmanlı tablo
 ks, kc = R["katman_kendi_sunucu"], R["katman_cdn"]
 kart(sl, Cm(17.7), Cm(3.8), Cm(14.5), Cm(13.6))
@@ -767,7 +777,7 @@ buyuk_sayi(sl, Cm(21.2), Cm(3.8), Cm(11.0), f"+%{tr(artis10, 1)}", "ortalama sü
            YESIL, 38, h=Cm(3.9))
 buyuk_sayi(sl, Cm(21.2), Cm(8.1), Cm(11.0),
            f"%{tr(100 * k01[0]['gecikme_olasiligi'], 1)} → %{tr(100 * k01[1]['gecikme_olasiligi'], 1)}",
-           "yeniden iletim olasılığı · %1 kayıpta (P = 1 − (1 − p)ⁿ, n: 7 → 8)", MAVI, 28, h=Cm(3.9))
+           f"yeniden iletim olasılığı · %1 kayıpta (P = 1 − (1 − p)ⁿ, n: {3 + R['simulasyon']['sf_klasik_seg']} → {4 + R['simulasyon']['sf_hibrit_seg']})", MAVI, 28, h=Cm(3.9))
 kart(sl, Cm(21.2), Cm(12.4), Cm(11.0), Cm(5.0), MERCAN_A, None)
 yazi(sl, Cm(21.8), Cm(12.7), Cm(10), Cm(4.5), ["**Kritik nokta**",
                                                "Tarayıcı iki payı sunucu desteklemese de gönderir → hazır olmayan "
@@ -776,21 +786,25 @@ yazi(sl, Cm(21.8), Cm(12.7), Cm(10), Cm(4.5), ["**Kritik nokta**",
 # =====================================================================================
 # 18. TUTARLILIK + DÜNYA
 # =====================================================================================
-sl = slayt("Tutarlılık ve küresel karşılaştırma", bolum="Alternatiflerle karşılaştırma", notlar=(
-    "Ölçüm turlarında sitelerin TLS sürümü, PQ desteği, seçilen grup ve sertifika bilgisi birebir aynı çıktı. "
-    "Küresel olarak F5 yüzde 54 buluyor; bizdeki oran daha düşük ama örneklemimiz finans ve kamu ağırlıklı. "
-    "Dikkat çekici olan yalnız TLS 1.2 oranı: dünya ortalamasının yaklaşık 2,5 katı."))
+ZM = R["zaman"]
+uni_kaz = sum(1 for d in ZM["degisimler"] if d["sektor"] == "Üniversite" and d["yeni_pq"] and not d["eski_pq"])
+sl = slayt("Zaman içinde değişim ve küresel karşılaştırma", bolum="Alternatiflerle karşılaştırma", notlar=(
+    f"Ekim'deki iki turda sonuçlar birebir aynıydı; yani ölçüm kararlı. Kasım'da ilk 130 siteyi tekrar ölçtüm. "
+    f"Altı haftada hazır site sayısı {ZM['pq_ekim']}'den {ZM['pq_kasim']}'e çıktı. Geçen {ZM['pq_kazanan']} kurumun hepsi "
+    f"kendi sunucusunu güncellemiş; {uni_kaz}'sı üniversite. Bir kurum ise CDN'den ayrılınca desteği kaybetti. "
+    "Küresel olarak F5 yüzde 54 buluyor; bizdeki oran daha düşük. Dikkat çekici olan yalnız TLS 1.2 oranı: dünya "
+    "ortalamasının yaklaşık 2,6 katı."))
 kart(sl, Cm(1.6), Cm(3.8), Cm(12.4), Cm(13.6))
-yazi(sl, Cm(2.2), Cm(4.2), Cm(11.5), Cm(0.8), "ÖLÇÜM TURLARI ARASI TUTARLILIK", 11, GRI, True)
-yazi(sl, Cm(2.2), Cm(5.0), Cm(11.5), Cm(2.6), f"{TUT['ayni_site']}/{TUT['toplam']}", 50, YESIL, True)
-yazi(sl, Cm(2.2), Cm(7.6), Cm(11.4), Cm(1.6), "sitede TLS sürümü, PQ desteği, grup, HRR ve sertifika birebir aynı", 14,
-     GRI)
-for i, (a, b) in enumerate(((f"{TUT['ip_degisen']}", "sitenin IP'si değişti (çoğu CDN) → sonuç değişmedi"),
-                            (f"r = {tr(TUT['rtt_pearson'], 2)}", "turlar arası RTT korelasyonu"))):
-    y = Cm(10.0 + i * 3.4)
+yazi(sl, Cm(2.2), Cm(4.2), Cm(11.5), Cm(0.8), "EKİM → KASIM 2026 (AYNI SİTELER)", 11, GRI, True)
+yazi(sl, Cm(2.2), Cm(5.0), Cm(11.5), Cm(2.6), f"{ZM['pq_ekim']} → {ZM['pq_kasim']}", 50, YESIL, True)
+yazi(sl, Cm(2.2), Cm(7.6), Cm(11.4), Cm(1.6), f"kuantum sonrası hazır site ({ZM['ortak']} ortak site, 6 hafta)", 14, GRI)
+for i, (a, b) in enumerate(((f"+{ZM['pq_kazanan']} kurum", f"kendi sunucusunda geçti ({uni_kaz}'sı üniversite)"),
+                            (f"−{ZM['pq_kaybeden']} kurum", "CDN'den ayrılınca desteği kaybetti"),
+                            (f"{TUT['ayni_site']}/{TUT['toplam']}", "Ekim'deki iki turda birebir aynı sonuç"))):
+    y = Cm(9.6 + i * 2.55)
     sekil(sl, MSO_SHAPE.RECTANGLE, Cm(2.2), y, Cm(11.2), Cm(0.02), CIZGI)
-    yazi(sl, Cm(2.2), y + Cm(0.3), Cm(11.2), Cm(1.4), a, 26, LACI, True)
-    yazi(sl, Cm(2.2), y + Cm(1.7), Cm(11.2), Cm(1.4), b, 13, GRI)
+    yazi(sl, Cm(2.2), y + Cm(0.2), Cm(11.2), Cm(1.2), a, 22, MERCAN if a.startswith("−") else LACI, True)
+    yazi(sl, Cm(2.2), y + Cm(1.4), Cm(11.2), Cm(1.0), b, 13, GRI)
 kart(sl, Cm(14.6), Cm(3.8), Cm(17.6), Cm(13.6))
 yazi(sl, Cm(15.2), Cm(4.2), Cm(16.6), Cm(0.8), "TÜRKİYE (BU PROJE) vs DÜNYA (F5 LABS, 2026)", 11, GRI, True)
 cd = CategoryChartData()
@@ -816,7 +830,7 @@ sl = slayt("Projenin özgün mühendislik katkıları", bolum="Özgün katkılar
     "Dört katkı: Türkiye'ye özgü sektörel ölçüm, hazırlığın belirleyicisinin katmanlı istatistikle gösterilmesi, aynı "
     "veride katmanlar arası ağ maliyeti analizi ve açık araç. Bu çalışmayı bir bildiri olarak göndermeyi planlıyorum."))
 kat = (("Türkiye'ye özgü sektörel PQ-TLS ölçümü", f"{len(SEKT)} kritik sektör · {N_LISTE} site · tekrarlı turlar", YESIL),
-       ("Belirleyicinin istatistikle ayrıştırılması", "CDN'e göre katmanlı permütasyon: sektör değil altyapı", MAVI),
+       ("İki geçiş yolunun ayrıştırılması", "CDN varsayılanı ve sunucu güncellemesi; katmanlı istatistik + 6 haftalık izleme", MAVI),
        ("Katmanlar arası ağ maliyeti", "TLS → TCP segmenti → Ethernet çerçevesi; ölçüm + pcap + simülasyon", AMBER),
        ("Açık ve tekrarlanabilir araç", "Python + OpenSSL + Docker; kurumlar kendi durumunu ölçebilir", MERCAN))
 for i, (b, a, r) in enumerate(kat):
@@ -860,8 +874,8 @@ sl = prs.slides.add_slide(prs.slide_layouts[6])
 bg = sl.background.fill; bg.solid(); bg.fore_color.rgb = LACI
 kafes_deseni(sl, Cm(24.5), Cm(1.0), 9, 17, Cm(1.0), LACI2, Cm(0.16))
 yazi(sl, Cm(2.2), Cm(1.6), Cm(20), Cm(0.8), "SONUÇ VE ÖNERİLER", 12, NANE, True)
-yazi(sl, Cm(2.2), Cm(2.6), Cm(21.5), Cm(4.2), ["Geçiş başladı, ama **kurumların kararıyla değil,**",
-                                               "**altyapı sağlayıcıları (CDN) sayesinde.**"], 28, BEYAZ, aralik=0)
+yazi(sl, Cm(2.2), Cm(2.6), Cm(21.5), Cm(4.2), ["Geçiş başladı: **çoğunlukla CDN'ler sayesinde,**",
+                                               "**giderek kurumların kendi sunucularında da.**"], 28, BEYAZ, aralik=0)
 for i, (s_, a) in enumerate(((f"%{tr(T['pq'])}", "siteler hazır"),
                              (f"{B['pq_k']}/{B['n']}" if B else "–", "banka hazır"),
                              (f"+{tr(ek_bayt / 1000)} KB", "el sıkışma başına"))):
@@ -878,7 +892,8 @@ for i, m in enumerate(oner):
     yazi(sl, Cm(3.6), y - Cm(0.1), Cm(19.5), Cm(1.2), m, 15, BEYAZ, dikey=MSO_ANCHOR.MIDDLE)
 yazi(sl, Cm(2.2), Cm(16.8), Cm(20), Cm(1.2), "Teşekkürler · Sorular?", 22, NANE, True)
 sl.notes_slide.notes_text_frame.text = (
-    "Özetle: Türkiye'de kuantum sonrası geçiş başladı, ama kurumların kararıyla değil, CDN sağlayıcıları sayesinde. "
+    "Özetle: Türkiye'de kuantum sonrası geçiş başladı; çoğunlukla CDN sağlayıcıları sayesinde, ama son haftalarda "
+    "kurumlar kendi sunucularında da geçiş yapıyor. "
     "Kendi sunucusunu işleten bankalar ve kamu kurumları geride. Ağ maliyeti küçük ama yapısal. Dört önerim var. "
     "Teşekkür ederim, sorularınızı alabilirim.")
 
