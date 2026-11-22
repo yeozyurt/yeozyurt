@@ -3,241 +3,201 @@
 <head>
 <meta charset="utf-8">
 <title>Kuantum Sonrası TLS – Proje Videosu</title>
-<style>
-  html, body { margin: 0; background: #0E1830; }
-  canvas { display: block; }
-</style>
+<style>html,body{margin:0;background:#0B1426}canvas{display:block}</style>
 </head>
 <body>
 <canvas id="c" width="1920" height="1080"></canvas>
 <script>
-// Veriler video_olustur.js tarafından window.VERI olarak eklenir (yoksa varsayılan).
-const V = window.VERI || {n: 129, pq: 32, cdn_n: 31, cdn_k: 30, oz_n: 98, oz_k: 2, pq_yuzde: 24.8, tls12: 26.4,
-  sektor: [["Banka", 0], ["Kamu", 3], ["Üniversite", 17.9], ["E-ticaret", 80]], ch_k: 232, ch_h: 1534, ek: 2272};
-const C = document.getElementById("c"), X = C.getContext("2d");
-const W = 1920, H = 1080;
-const R = {laci: "#0E1830", laci2: "#18264A", laci3: "#22335A", yesil: "#1FB585", nane: "#9FE0C8", mavi: "#5B8DEF",
-  mercan: "#F06A45", amber: "#F2B544", beyaz: "#FFFFFF", gri: "#8D9AB3", acik: "#C9D3E6"};
-const F = "Inter, 'Inter Display', sans-serif";
+// window.VERI: veriler + sahne zaman çizelgesi (video_ses.py üretir)
+const V = window.VERI || {n:129,pq:32,cdn_n:31,cdn_k:30,oz_n:98,oz_k:2,pq_yuzde:24.8,banka_k:0,banka_n:27,
+  sektor:[["Banka",0],["Kamu",3],["Üniversite",17.9],["E-ticaret",80]],ch_k:232,ch_h:1534,ek:2272,
+  sahneler:[0,6,12,19,26,33,40,48].map((s,i,a)=>({bas:s,son:a[i+1]||54,metin:""}))};
+const C=document.getElementById("c"), X=C.getContext("2d"), W=1920, H=1080;
+const R={bg1:"#0B1426",bg2:"#13224A",kafes:"#1E3160",yesil:"#22C38E",nane:"#A6F0D4",mavi:"#5B8DEF",mercan:"#FF6B4A",
+  amber:"#FFC24B",beyaz:"#FFFFFF",gri:"#8D9AB3",acik:"#C9D3E6",kart:"#1A2B55",mor:"#9B7BFF"};
+const F="Inter,'Inter Display',sans-serif";
+const kis=(v,a,b)=>Math.max(a,Math.min(b,v)), ilerle=(t,a,b)=>kis((t-a)/(b-a),0,1);
+const eo=x=>1-Math.pow(1-x,3), eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const geri=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);}; // easeOutBack
+const lerp=(a,b,x)=>a+(b-a)*x;
+const tr=(x,b=1)=>x.toFixed(b).replace(".",",");
 
-// ---- yardımcılar ---------------------------------------------------------------
-const kis = (v, a, b) => Math.max(a, Math.min(b, v));
-const ilerle = (t, a, b) => kis((t - a) / (b - a), 0, 1);          // 0..1
-const eo = x => 1 - Math.pow(1 - x, 3);                                  // easeOutCubic
-const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-const lerp = (a, b, x) => a + (b - a) * x;
-function goster(t, a, b, g = .5) { return Math.min(eo(ilerle(t, a, a + g)), 1 - eo(ilerle(t, b - g, b))); }
+// ---------------- çizim temel ----------------------------------------------------------
+function yazi(m,x,y,b,renk,o=1,k=700,h="center",par=0){X.save();X.globalAlpha=o;X.fillStyle=renk;X.font=`${k} ${b}px ${F}`;
+  X.textAlign=h;X.textBaseline="middle";if(par){X.shadowColor=renk;X.shadowBlur=par;}X.fillText(m,x,y);X.restore();}
+function kutu(x,y,w,h,r,d,o=1,c=null,k=3,par=0){X.save();X.globalAlpha=o;X.beginPath();X.roundRect(x,y,w,h,r);
+  if(par){X.shadowColor=c||d;X.shadowBlur=par;}if(d){X.fillStyle=d;X.fill();}if(c){X.strokeStyle=c;X.lineWidth=k;X.stroke();}X.restore();}
+function daire(x,y,r,renk,o=1,par=0){if(r<=0)return;X.save();X.globalAlpha=o;if(par){X.shadowColor=renk;X.shadowBlur=par;}
+  X.beginPath();X.arc(x,y,r,0,7);X.fillStyle=renk;X.fill();X.restore();}
+function cizgi(x1,y1,x2,y2,renk,k=3,o=1,kes=null){X.save();X.globalAlpha=o;X.strokeStyle=renk;X.lineWidth=k;X.lineCap="round";
+  if(kes)X.setLineDash(kes);X.beginPath();X.moveTo(x1,y1);X.lineTo(x2,y2);X.stroke();X.restore();}
+function grup(x,y,s,o,f){if(o<=0)return;X.save();X.translate(x,y);X.scale(s,s);X.globalAlpha=o;f();X.restore();}
 
-function yazi(m, x, y, boyut, renk, opak = 1, kalin = 600, hiza = "center", ls = 0) {
-  X.save(); X.globalAlpha = opak; X.fillStyle = renk; X.font = `${kalin} ${boyut}px ${F}`;
-  X.textAlign = hiza; X.textBaseline = "middle";
-  if (ls) X.letterSpacing = ls + "px";
-  X.fillText(m, x, y); X.restore();
-}
-function kutu(x, y, w, h, r, dolgu, opak = 1, cizgi = null, kal = 3) {
-  X.save(); X.globalAlpha = opak; X.beginPath(); X.roundRect(x, y, w, h, r);
-  if (dolgu) { X.fillStyle = dolgu; X.fill(); }
-  if (cizgi) { X.strokeStyle = cizgi; X.lineWidth = kal; X.stroke(); }
-  X.restore();
-}
-function daire(x, y, r, renk, opak = 1) { X.save(); X.globalAlpha = opak; X.beginPath(); X.arc(x, y, r, 0, 7); X.fillStyle = renk; X.fill(); X.restore(); }
-function cizgi(x1, y1, x2, y2, renk, kal = 3, opak = 1, kesik = null) {
-  X.save(); X.globalAlpha = opak; X.strokeStyle = renk; X.lineWidth = kal; if (kesik) X.setLineDash(kesik);
-  X.beginPath(); X.moveTo(x1, y1); X.lineTo(x2, y2); X.stroke(); X.restore();
-}
-function kilit(x, y, s, renk, opak = 1, kirik = 0) {
-  X.save(); X.globalAlpha = opak; X.translate(x, y);
-  X.strokeStyle = renk; X.lineWidth = s * .12; X.lineCap = "round";
-  X.beginPath(); X.arc(0, -s * .18 - kirik * s * .25, s * .28, Math.PI, 0); X.lineTo(s * .28, -s * .02 - kirik * s * .25); X.stroke();
-  X.beginPath(); X.moveTo(-s * .28, -s * .18); X.lineTo(-s * .28, -s * .02); X.stroke();
-  X.fillStyle = renk; X.beginPath(); X.roundRect(-s * .42, -s * .05, s * .84, s * .62, s * .1); X.fill();
-  X.fillStyle = R.laci; X.beginPath(); X.arc(0, s * .2, s * .08, 0, 7); X.fill();
-  X.restore();
-}
-function kafes(t, opak) {           // arka plan kafes (lattice) deseni
-  for (let i = 0; i < 26; i++) for (let j = 0; j < 15; j++) {
-    const x = 40 + i * 76, y = 40 + j * 76;
-    const dalga = .5 + .5 * Math.sin(t * 1.2 + i * .45 + j * .3);
-    daire(x, y, 2.4, R.laci3, opak * (.5 + .5 * dalga));
-  }
-}
-function paket(x, y, w, renk, etiket, opak = 1) {
-  kutu(x, y - 22, w, 44, 10, renk, opak);
-  if (etiket) yazi(etiket, x + w / 2, y, 20, R.laci, opak, 700);
-}
+// ---------------- ikonlar (merkez 0,0; yaklaşık 100 birim) -------------------------------
+function ikLaptop(r=R.mavi){X.fillStyle=r;X.beginPath();X.roundRect(-60,-45,120,78,8);X.fill();
+  X.fillStyle=R.bg1;X.fillRect(-50,-36,100,60);X.fillStyle=r;X.beginPath();X.moveTo(-78,38);X.lineTo(78,38);X.lineTo(68,50);X.lineTo(-68,50);X.closePath();X.fill();
+  X.fillStyle=R.nane;for(let i=0;i<4;i++)X.fillRect(-40,-26+i*12,40+((i*37)%40),5);}
+function ikBanka(r=R.acik){X.fillStyle=r;X.beginPath();X.moveTo(-70,-20);X.lineTo(0,-62);X.lineTo(70,-20);X.closePath();X.fill();
+  for(let i=0;i<4;i++)X.fillRect(-56+i*34,-12,16,52);X.fillRect(-75,44,150,12);}
+function ikSunucu(r=R.mavi){for(let i=0;i<3;i++){X.fillStyle=r;X.beginPath();X.roundRect(-55,-55+i*38,110,32,8);X.fill();
+  X.fillStyle=R.bg1;X.fillRect(-40,-44+i*38,40,8);daire(32,-39+i*38,5,R.yesil);}}
+function ikBulut(r=R.yesil){X.fillStyle=r;X.beginPath();X.arc(-30,10,30,0,7);X.arc(10,-10,40,0,7);X.arc(45,15,26,0,7);X.fill();
+  X.fillRect(-30,10,75,31);}
+function ikKilit(r,kirik=0){X.strokeStyle=r;X.lineWidth=12;X.lineCap="round";X.beginPath();
+  X.arc(0,-22-kirik*26,28,Math.PI,0);X.lineTo(28,-4-kirik*26);X.stroke();X.beginPath();X.moveTo(-28,-22);X.lineTo(-28,-4);X.stroke();
+  X.fillStyle=r;X.beginPath();X.roundRect(-42,-6,84,62,10);X.fill();X.fillStyle=R.bg1;X.beginPath();X.arc(0,20,9,0,7);X.fill();X.fillRect(-4,22,8,16);}
+function ikAnahtar(r){X.strokeStyle=r;X.lineWidth=12;X.beginPath();X.arc(-38,0,24,0,7);X.stroke();X.fillStyle=r;
+  X.fillRect(-14,-6,80,12);X.fillRect(44,0,10,22);X.fillRect(60,0,8,16);}
+function ikKalkan(r,tik=1){X.fillStyle=r;X.beginPath();X.moveTo(0,-70);X.lineTo(58,-48);X.lineTo(52,20);X.quadraticCurveTo(30,58,0,72);
+  X.quadraticCurveTo(-30,58,-52,20);X.lineTo(-58,-48);X.closePath();X.fill();
+  if(tik>0){X.strokeStyle=R.bg1;X.lineWidth=13;X.lineCap="round";X.lineJoin="round";X.beginPath();X.moveTo(-24,2);
+    X.lineTo(lerp(-24,-6,kis(tik*2,0,1)),lerp(2,22,kis(tik*2,0,1)));if(tik>.5)X.lineTo(lerp(-6,28,(tik-.5)*2),lerp(22,-22,(tik-.5)*2));X.stroke();}}
+function ikCip(r,t){X.save();X.shadowColor=r;X.shadowBlur=30+10*Math.sin(t*6);X.fillStyle=r;X.beginPath();X.roundRect(-48,-48,96,96,14);X.fill();X.restore();
+  X.fillStyle=r;for(let i=0;i<4;i++){X.fillRect(-36+i*22,-66,8,16);X.fillRect(-36+i*22,50,8,16);X.fillRect(-66,-36+i*22,16,8);X.fillRect(50,-36+i*22,16,8);}
+  X.fillStyle=R.bg1;X.font=`800 30px ${F}`;X.textAlign="center";X.textBaseline="middle";X.fillText("Q",0,2);}
+function ikGoz(r){X.strokeStyle=r;X.lineWidth=9;X.beginPath();X.moveTo(-60,0);X.quadraticCurveTo(0,-50,60,0);X.quadraticCurveTo(0,50,-60,0);X.stroke();
+  X.fillStyle=r;X.beginPath();X.arc(0,0,17,0,7);X.fill();}
+function ikKure(r,t){X.strokeStyle=r;X.lineWidth=6;X.beginPath();X.arc(0,0,70,0,7);X.stroke();
+  for(let k=-1;k<=1;k++){X.beginPath();X.ellipse(0,0,Math.abs(70*Math.cos(t*.8+k)),70,0,0,7);X.stroke();}
+  X.beginPath();X.moveTo(-70,0);X.lineTo(70,0);X.stroke();X.beginPath();X.ellipse(0,-35,60,8,0,0,7);X.stroke();X.beginPath();X.ellipse(0,35,60,8,0,0,7);X.stroke();}
 
-// ---- site noktaları ızgarası --------------------------------------------------------
-function izgara(n, x0, y0, w, h) {
-  const sut = Math.ceil(Math.sqrt(n * w / h)), sat = Math.ceil(n / sut);
-  const ad = Math.min(w / sut, h / sat);
-  const pts = [];
-  for (let k = 0; k < n; k++) pts.push([x0 + (k % sut) * ad + ad / 2, y0 + Math.floor(k / sut) * ad + ad / 2, ad]);
-  return pts;
-}
-// Sabit, tekrarlanabilir "rastgele" sıra
-function karistir(n, tohum) { const a = [...Array(n).keys()]; let s = tohum;
-  for (let i = n - 1; i > 0; i--) { s = (s * 9301 + 49297) % 233280; const j = Math.floor(s / 233280 * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-  return a; }
+// ---------------- arka plan --------------------------------------------------------------
+function arkaPlan(t){const g=X.createRadialGradient(W*.5,H*.45,100,W*.5,H*.5,1200);g.addColorStop(0,R.bg2);g.addColorStop(1,R.bg1);
+  X.fillStyle=g;X.fillRect(0,0,W,H);const kay=(t*8)%80;
+  for(let i=-1;i<26;i++)for(let j=-1;j<15;j++){const x=i*80+kay,y=j*80+kay*.5,d=.5+.5*Math.sin(t*1.3+i*.5+j*.35);
+    daire(x,y,2.2,R.kafes,.35+.65*d);}
+  // ara sıra parlayan kafes noktaları
+  for(let k=0;k<14;k++){const i=(k*7+Math.floor(t*.7+k))%24,j=(k*5+Math.floor(t*.5))%13,p=(t*.7+k*.37)%1;
+    daire(i*80+kay,j*80+kay*.5,3.5,R.yesil,Math.sin(p*Math.PI)*.8,12);}
+  const v=X.createRadialGradient(W/2,H/2,500,W/2,H/2,1150);v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,.55)");
+  X.fillStyle=v;X.fillRect(0,0,W,H);}
 
-// Site sınıfları: 0 = CDN+PQ, 1 = CDN PQ yok, 2 = kendi+PQ, 3 = kendi PQ yok
-const SINIF = []; for (let i = 0; i < V.cdn_k; i++) SINIF.push(0); for (let i = 0; i < V.cdn_n - V.cdn_k; i++) SINIF.push(1);
-for (let i = 0; i < V.oz_k; i++) SINIF.push(2); for (let i = 0; i < V.oz_n - V.oz_k; i++) SINIF.push(3);
-const SIRA = karistir(SINIF.length, 7);
+// ---------------- site ızgarası ----------------------------------------------------------
+function izgara(n,x0,y0,w,h){const sut=Math.ceil(Math.sqrt(n*w/h)),sat=Math.ceil(n/sut),ad=Math.min(w/sut,h/sat);
+  const ox=x0+(w-sut*ad)/2,oy=y0+(h-sat*ad)/2;const p=[];for(let k=0;k<n;k++)p.push([ox+(k%sut)*ad+ad/2,oy+Math.floor(k/sut)*ad+ad/2,ad]);return p;}
+function karistir(n,s){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){s=(s*9301+49297)%233280;const j=Math.floor(s/233280*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const SINIF=[];for(let i=0;i<V.cdn_k;i++)SINIF.push(0);for(let i=0;i<V.cdn_n-V.cdn_k;i++)SINIF.push(1);
+for(let i=0;i<V.oz_k;i++)SINIF.push(2);for(let i=0;i<V.oz_n-V.oz_k;i++)SINIF.push(3);
+const SIRA=karistir(SINIF.length,11), POZ=SIRA.map((_,k)=>k); const sirasi=[];SIRA.forEach((k,i)=>sirasi[k]=i);
+const NOK=izgara(SINIF.length,980,200,820,680);
+const hazir=s=>s===0||s===2;
 
-// =====================================================================================
-function render(t) {
-  X.fillStyle = R.laci; X.fillRect(0, 0, W, H);
-  kafes(t, .9);
+// ---------------- sahneler: f(yerel zaman lt, süre d, opaklık o) --------------------------
+const SAHNE=[
+// 1 · Açılış
+(lt,d,o)=>{const g=eo(ilerle(lt,.2,1.4));
+  grup(W/2,380,lerp(.6,1,geri(ilerle(lt,.1,1.1))),o*g,()=>{ikKure(R.nane,lt);});
+  for(let k=0;k<5;k++){const a=lt*1.2+k*1.256,x=W/2+Math.cos(a)*190,y=380+Math.sin(a)*70;
+    grup(x,y,.32,o*g*(Math.sin(a)>-0.2?1:.35),()=>{ikKilit(k%2?R.mavi:R.yesil);});}
+  const a1=eo(ilerle(lt,1.0,1.8)),a2=eo(ilerle(lt,1.6,2.4));
+  yazi("Türk web siteleri",W/2,620+(1-a1)*40,88,R.beyaz,o*a1,800);
+  yazi("kuantum bilgisayarlara hazır mı?",W/2,730+(1-a2)*40,88,R.nane,o*a2,800,"center",18);},
+// 2 · Şimdi topla, sonra çöz
+(lt,d,o)=>{yazi("\"Şimdi topla, sonra çöz\"",W/2,150,62,R.beyaz,o*eo(ilerle(lt,0,.6)),800);
+  const g=eo(ilerle(lt,.2,1));grup(330,430,1.2,o*g,()=>ikLaptop());grup(1590,430,1.2,o*g,()=>ikBanka());
+  yazi("Kullanıcı",330,540,28,R.acik,o*g,600);yazi("Banka",1590,540,28,R.acik,o*g,600);
+  cizgi(440,430,1480,430,R.gri,3,o*g*.6,[12,12]);
+  for(let k=0;k<7;k++){const ph=(lt*.45+k/7)%1;if(lt<.8)continue;const x=lerp(460,1450,ph);
+    kutu(x-34,410,68,40,10,R.mavi,o,null,0,12);grup(x,430,.28,o,()=>ikKilit(R.bg1));
+    if(ph>.42&&ph<.6){const q=ilerle(ph,.42,.6);kutu(lerp(x,W/2,q)-34,lerp(410,640,q),68,40,10,R.mercan,o*(1-q)*.9);}}
+  const e=eo(ilerle(lt,1.2,2));grup(W/2,690,1,o*e,()=>ikGoz(R.mercan));yazi("Saldırgan kaydediyor",W/2,770,30,R.mercan,o*e,700);
+  const z=eo(ilerle(lt,d*.45,d*.7));cizgi(420,930,lerp(420,1380,z),930,R.gri,4,o);yazi("Bugün",420,980,26,R.acik,o,600);
+  if(z>.9){const c=eo(ilerle(lt,d*.68,d*.78));grup(1480,900,lerp(.3,.9,geri(c)),o*c,()=>ikCip(R.mor,lt));
+    yazi("Kuantum bilgisayar",1480,1000,26,R.mor,o*c,700);}
+  const kir=eo(ilerle(lt,d*.78,d*.9));
+  if(kir>0){grup(W/2+420,700,.8,o,()=>ikKilit(R.mercan,kir));
+    for(let p=0;p<14;p++){const a=p*0.45,r=kir*120;daire(W/2+420+Math.cos(a)*r,700+Math.sin(a)*r,5,R.mercan,o*(1-kir)*.9);}}},
+// 3 · Çözüm: hibrit
+(lt,d,o)=>{yazi("Çözüm hazır: hibrit anahtar değişimi",W/2,150,58,R.beyaz,o*eo(ilerle(lt,0,.6)),800);
+  const b=eio(ilerle(lt,.6,2.2));
+  grup(lerp(420,W/2-90,b),lerp(470,470,b),1.6,o,()=>ikAnahtar(R.mavi));
+  grup(lerp(1500,W/2+90,b),470,1.6,o,()=>{X.scale(-1,1);ikAnahtar(R.yesil);});
+  yazi("Klasik · X25519",lerp(420,W/2-260,b),600,32,R.mavi,o*(1-b*.9),700);
+  yazi("Kuantum sonrası · ML-KEM",lerp(1500,W/2+260,b),600,32,R.yesil,o*(1-b*.9),700);
+  const k=eo(ilerle(lt,2.1,2.9));
+  if(k>0){X.save();X.globalAlpha=o*k*.5;X.fillStyle=R.yesil;X.beginPath();X.arc(W/2,480,lerp(0,260,k),0,7);X.fill();X.restore();
+    grup(W/2,480,lerp(.5,1.9,geri(k)),o*k,()=>ikKalkan(R.nane,ilerle(lt,2.6,3.4)));}
+  const m=eo(ilerle(lt,3.2,3.9));
+  kutu(W/2-330,700,660,110,55,null,o*m,R.nane,4,20);yazi("X25519MLKEM768",W/2,755,56,R.nane,o*m,800);
+  yazi("Biri kırılsa bile diğeri korur",W/2,880,34,R.acik,o*m,500);},
+// 4 · Yöntem
+(lt,d,o)=>{yazi("Ölçüm: "+V.n+" site · "+V.sektor.length+" kritik sektör",W/2,120,54,R.beyaz,o*eo(ilerle(lt,0,.6)),800);
+  const g=eo(ilerle(lt,.2,1));grup(380,520,1.5,o*g,()=>ikLaptop());
+  yazi("Python + OpenSSL",380,650,30,R.acik,o*g,600);yazi("+ Wireshark",380,695,26,R.gri,o*g,500);
+  const ac=ilerle(lt,1.0,d-.6);
+  NOK.forEach((p,k)=>{const s=ilerle(ac,sirasi[k]/NOK.length*.85,sirasi[k]/NOK.length*.85+.05);
+    if(s>0&&s<1){cizgi(470,520,p[0],p[1],R.nane,2,o*(1-s)*.6);}
+    daire(p[0],p[1],p[2]*.33*geri(s),R.acik,o*.95);});
+  yazi(Math.round(V.n*eo(ac))+" / "+V.n,1390,950,44,R.nane,o,800);},
+// 5 · Bulgu 1
+(lt,d,o)=>{const b=eo(ilerle(lt,.2,1.4));
+  NOK.forEach((p,k)=>{const h=hazir(SINIF[k]);daire(p[0],p[1],p[2]*.33,h?R.yesil:R.acik,o*(h?1:lerp(.95,.3,b)),h?10*b:0);});
+  const y=eo(ilerle(lt,.4,1.8));yazi("%"+tr(V.pq_yuzde*y),470,250,150,R.yesil,o,800,"center",25);
+  yazi("site kuantum sonrası hazır",470,360,36,R.acik,o*y,500);
+  const ara=Math.min(86,470/V.sektor.length);
+  V.sektor.forEach((s,i)=>{const a=eo(ilerle(lt,1.6+i*.3,2.6+i*.3)),yy=470+i*ara,dusuk=s[1]<10;
+    yazi(s[0],120,yy,28,R.acik,o*a,600,"left");kutu(360,yy-19,380,38,19,R.kart,o*a);
+    kutu(360,yy-19,Math.max(10,380*s[1]/100*a),38,19,dusuk?R.mercan:R.yesil,o*a);
+    yazi("%"+Math.round(s[1]*a),760,yy,28,dusuk?R.mercan:R.yesil,o*a,800,"left");});},
+// 6 · Bulgu 2: CDN
+(lt,d,o)=>{const a=eio(ilerle(lt,.3,1.8));const sol=izgara(V.cdn_n,170,420,620,420),sag=izgara(V.oz_n,1010,420,760,420);let ci=0,oi=0;
+  NOK.forEach((p,k)=>{const s=SINIF[k],hd=s<2?sol[ci++]:sag[oi++],h=hazir(s);
+    daire(lerp(p[0],hd[0],a),lerp(p[1],hd[1],a),Math.min(lerp(p[2],hd[2],a)*.33,15),h?R.yesil:R.acik,o*(h?1:.4),h?10:0);});
+  const b=eo(ilerle(lt,1.6,2.4));
+  grup(480,260,lerp(.4,1,geri(b)),o*b,()=>ikBulut());grup(1390,260,lerp(.4,1,geri(b)),o*b,()=>ikSunucu());
+  yazi("CDN arkasında",480,360,36,R.beyaz,o*b,700);yazi("Kendi sunucusu",1390,360,36,R.beyaz,o*b,700);
+  const c=eo(ilerle(lt,2.2,3.2));
+  yazi("%"+tr(100*V.cdn_k/V.cdn_n*c),480,930,104,R.yesil,o*c,800,"center",22);
+  yazi("%"+tr(100*V.oz_k/V.oz_n*c),1390,930,104,R.mercan,o*c,800,"center",22);
+  const e=eo(ilerle(lt,d*.6,d*.6+.7));kutu(W/2-430,60,860,96,48,R.kart,o*e,R.nane,3);
+  yazi("Belirleyici sektör değil, altyapı",W/2,108,44,R.nane,o*e,800);},
+// 7 · Ağ maliyeti
+(lt,d,o)=>{yazi("Bedeli: ilk mesaj iki pakete bölünüyor",W/2,120,56,R.beyaz,o*eo(ilerle(lt,0,.6)),800);
+  const olc=1150/1600,x0=330;yazi("Klasik",x0-30,300,32,R.acik,o,600,"right");
+  kutu(x0,272,V.ch_k*olc,56,14,R.mavi,o);yazi(V.ch_k+" B",x0+V.ch_k*olc+20,300,30,R.mavi,o,800,"left");
+  const g=eo(ilerle(lt,.6,2.2)),L=lerp(V.ch_k,V.ch_h,g)*olc;yazi("Hibrit",x0-30,420,32,R.acik,o,600,"right");
+  kutu(x0,392,L,56,14,R.yesil,o,null,0,16);yazi(Math.round(lerp(V.ch_k,V.ch_h,g))+" B",x0+L+20,420,30,R.yesil,o,800,"left");
+  const sx=x0+1460*olc;cizgi(sx,230,sx,480,R.mercan,4,o,[14,10]);yazi("1 TCP paketi = 1460 B",sx,205,26,R.mercan,o,800);
+  // kablo üzerinde iki paket, biri kaybolur ve yeniden gönderilir
+  const p=ilerle(lt,2.4,d-.4);if(p>0){cizgi(200,700,1720,700,R.gri,3,o,[8,10]);grup(160,700,.7,o,()=>ikLaptop());grup(1770,700,.7,o,()=>ikSunucu());
+    const p1=eo(kis(p*2.2,0,1));kutu(lerp(240,1520,p1),672,190,56,12,R.yesil,o,null,0,14);yazi("Paket 1",lerp(240,1520,p1)+95,700,24,R.bg1,o,800);
+    const p2=kis(p*2.2-.15,0,1);if(p2<.55){kutu(lerp(240,1600,p2)-110,672,90,56,12,R.amber,o);yazi("2",lerp(240,1600,p2)-65,700,24,R.bg1,o,800);}
+    else{const dus=ilerle(p2,.55,.75);kutu(lerp(240,1600,.55)-110,672+dus*160,90,56,12,R.amber,o*(1-dus));
+      if(dus>.3)yazi("kayıp!",lerp(240,1600,.55)-65,880,32,R.mercan,o*kis((dus-.3)*3,0,1),800);
+      const re=ilerle(p,.62,.95);if(re>0){const xr=lerp(240,1520,eo(re));kutu(xr,762,90,56,12,R.amber,o);yazi("2 · tekrar",xr+45,840,22,R.amber,o,700);}}}
+  const q=eo(ilerle(lt,d-1.6,d-.8));yazi("+"+tr(V.ek/1000)+" KB her bağlantıda · kayıplı ağda daha yavaş",W/2,975,34,R.nane,o*q,700);},
+// 8 · Kapanış
+(lt,d,o)=>{const k=eo(ilerle(lt,.1,1.0));grup(W/2,330,lerp(.5,1.4,geri(k)),o*k,()=>ikKalkan(R.yesil,1));
+  const a=eo(ilerle(lt,.6,1.4)),b=eo(ilerle(lt,1.3,2.1)),c=eo(ilerle(lt,2.2,3.0));
+  yazi("Geçiş başladı —",W/2,560,70,R.beyaz,o*a,800);
+  yazi("ama kurumlar değil, CDN'ler sayesinde.",W/2,655,70,R.nane,o*b,800,"center",16);
+  cizgi(W/2-60*c,745,W/2+60*c,745,R.yesil,5,o);
+  yazi("Rümeysa Betül Özyurt · Veri İletişimi (BİL321)",W/2,810,32,R.acik,o*c,600);
+  yazi("İstanbul Ticaret Üniversitesi · 2026",W/2,860,28,R.gri,o*c,500);},
+];
 
-  // ---------- SAHNE 1: başlık (0–5.5) --------------------------------------------------
-  { const o = goster(t, 0, 5.5);
-    if (o > 0) {
-      yazi("VERİ İLETİŞİMİ · DÖNEM PROJESİ", W / 2, 330, 26, R.nane, o, 600, "center", 6);
-      const s1 = eo(ilerle(t, .3, 1.3)), s2 = eo(ilerle(t, .8, 1.8));
-      yazi("Türk web siteleri", W / 2, 470 + (1 - s1) * 30, 92, R.beyaz, o * s1, 700);
-      yazi("kuantum bilgisayarlara hazır mı?", W / 2, 590 + (1 - s2) * 30, 92, R.nane, o * s2, 700);
-      const s3 = eo(ilerle(t, 2.0, 2.8));
-      cizgi(W / 2 - 60 * s3, 690, W / 2 + 60 * s3, 690, R.yesil, 5, o);
-      yazi("Kuantum sonrası TLS · sektörel ölçüm · ağ maliyeti", W / 2, 750, 32, R.acik, o * s3, 400);
-    } }
+// ---------------- altyazı -----------------------------------------------------------------
+function altyazi(t){const s=V.sahneler.find(s=>t>=s.konusma_bas&&t<s.konusma_son);if(!s||!s.cumleler)return;
+  const lt=t-s.konusma_bas,top=s.cumleler.reduce((a,c)=>a+c.length,0),sure=s.konusma_son-s.konusma_bas;let acc=0;
+  for(const c of s.cumleler){const d=sure*c.length/top;if(lt<acc+d){X.save();X.font=`600 34px ${F}`;const w=Math.min(1700,X.measureText(c).width+70);X.restore();
+      const o=Math.min(1,(lt-acc)/.2,(acc+d-lt)/.2);kutu(W/2-w/2,970,w,66,18,"rgba(8,14,30,.78)",o);yazi(c,W/2,1004,34,R.beyaz,o,600);return;}acc+=d;}}
 
-  // ---------- SAHNE 2: şimdi topla, sonra çöz (5.5–12) ---------------------------------
-  { const o = goster(t, 5.5, 12);
-    if (o > 0) {
-      yazi("\"Şimdi topla, sonra çöz\"", W / 2, 170, 64, R.beyaz, o, 700);
-      // istemci -> sunucu, paketler kayda alınıyor
-      kutu(260, 420, 240, 160, 24, R.laci3, o); yazi("Kullanıcı", 380, 500, 30, R.acik, o, 600);
-      kutu(1420, 420, 240, 160, 24, R.laci3, o); yazi("Banka", 1540, 500, 30, R.acik, o, 600);
-      cizgi(500, 500, 1420, 500, R.gri, 3, o * .6, [10, 10]);
-      for (let k = 0; k < 6; k++) {
-        const ph = ((t - 5.8) * .55 + k / 6) % 1; if (t < 5.8) continue;
-        const x = lerp(520, 1340, ph);
-        kutu(x, 482, 60, 36, 8, R.mavi, o * .95); kilit(x + 30, 500, 22, R.laci, o);
-        // kopya kayıt kutusuna düşer
-        if (ph > .45 && ph < .6) { const d = ilerle(ph, .45, .6); kutu(lerp(x, 930, d), lerp(482, 690, d), 60, 36, 8, R.mavi, o * (1 - d) * .8); }
-      }
-      kutu(840, 660, 240, 130, 20, null, o, R.mercan, 4); yazi("Saldırgan", 960, 705, 28, R.mercan, o, 700);
-      yazi("kaydediyor", 960, 748, 24, R.acik, o, 400);
-      // zaman çizgisi ve kırılma
-      const z = eo(ilerle(t, 8.2, 10.2));
-      cizgi(420, 900, lerp(420, 1500, z), 900, R.gri, 4, o);
-      yazi("2026", 420, 945, 26, R.acik, o, 600);
-      if (z > .98) { yazi("Kuantum bilgisayar", 1500, 945, 26, R.mercan, o, 700); }
-      const kir = eo(ilerle(t, 10.0, 10.8));
-      kilit(1500, 840, 70, kir > 0 ? R.mercan : R.mavi, o * (z > .95 ? 1 : 0), kir);
-      if (kir > 0) yazi("Bugünkü şifre yarın çözülür", W / 2, 1010, 34, R.mercan, o * kir, 700);
-    } }
-
-  // ---------- SAHNE 3: çözüm (12–17.5) ------------------------------------------------------
-  { const o = goster(t, 12, 17.5);
-    if (o > 0) {
-      yazi("Çözüm hazır: hibrit anahtar değişimi", W / 2, 190, 58, R.beyaz, o, 700);
-      const b = eio(ilerle(t, 12.8, 14.4));
-      const xs = lerp(520, 760, b), xm = lerp(1400, 1160, b);
-      kutu(xs - 180, 420, 360, 200, 28, R.mavi, o); yazi("X25519", xs, 495, 46, R.laci, o, 800);
-      yazi("klasik", xs, 555, 28, R.laci, o, 500);
-      kutu(xm - 180, 420, 360, 200, 28, R.yesil, o); yazi("ML-KEM-768", xm, 495, 46, R.laci, o, 800);
-      yazi("kuantum sonrası", xm, 555, 28, R.laci, o, 500);
-      const c = eo(ilerle(t, 14.3, 15.2));
-      if (c > 0) {
-        yazi("+", W / 2, 520, 70, R.beyaz, o * c, 800);
-        kutu(560, 700, 800, 130, 30, null, o * c, R.nane, 4);
-        yazi("X25519MLKEM768", W / 2, 765, 56, R.nane, o * c, 800);
-        yazi("Biri kırılsa bile diğeri korur · NIST FIPS 203 · tarayıcılarda varsayılan", W / 2, 900, 30, R.acik, o * c, 400);
-      }
-    } }
-
-  // ---------- SAHNE 4: yöntem + site ızgarası (17.5–24) --------------------------------------
-  const nokta = izgara(SINIF.length, 820, 230, 980, 720);
-  { const o = goster(t, 17.5, 24.2, .4);
-    if (o > 0) {
-      yazi("Ölçtüm: " + V.n + " site, " + V.sektor.length + " kritik sektör", 520, 170, 52, R.beyaz, o, 700, "left");
-      const steps = [["Dizüstü bilgisayar", "Python + OpenSSL"], ["Ev interneti", "TCP / TLS 1.3"], ["Her siteye 5 bağlantı", "+ Wireshark doğrulama"]];
-      steps.forEach((s, i) => { const a = eo(ilerle(t, 17.9 + i * .4, 18.6 + i * .4));
-        kutu(120, 300 + i * 200, 560, 150, 24, R.laci3, o * a);
-        yazi(s[0], 400, 355 + i * 200, 34, R.beyaz, o * a, 700); yazi(s[1], 400, 405 + i * 200, 26, R.acik, o * a, 400);
-        if (i < 2) cizgi(400, 452 + i * 200, 400, 498 + i * 200, R.gri, 3, o * a); });
-      const sayi = Math.round(V.n * eo(ilerle(t, 19.2, 22.5)));
-      nokta.forEach((p, k) => { const g = ilerle(t, 19.2 + SIRA.indexOf(k) / SINIF.length * 3.3, 19.5 + SIRA.indexOf(k) / SINIF.length * 3.3);
-        daire(p[0], p[1], p[2] * .32 * eo(g), R.acik, o * .9); });
-      yazi(sayi + " / " + V.n, 1310, 1000, 40, R.nane, o, 700);
-    } }
-
-  // ---------- SAHNE 5: bulgu 1 (24–31) --------------------------------------------------------
-  { const o = goster(t, 24, 31.2, .4);
-    if (o > 0) {
-      const boya = eo(ilerle(t, 24.2, 25.6));
-      nokta.forEach((p, k) => { const s = SINIF[k]; const hazir = s === 0 || s === 2;
-        daire(p[0], p[1], p[2] * .32, hazir ? R.yesil : R.acik, o * (hazir ? 1 : lerp(.9, .35, boya))); });
-      const y = eo(ilerle(t, 24.6, 26.0));
-      yazi("%" + (V.pq_yuzde * y).toFixed(1).replace(".", ","), 450, 330, 150, R.yesil, o * y, 800);
-      yazi("site kuantum sonrası hazır", 450, 445, 34, R.acik, o * y, 500);
-      V.sektor.forEach((s, i) => { const a = eo(ilerle(t, 26.4 + i * .35, 27.6 + i * .35));
-        const ara = Math.min(95, 440 / V.sektor.length), yy = 590 + i * ara;
-        yazi(s[0], 110, yy, 30, R.acik, o, 600, "left");
-        kutu(330, yy - 22, 420, 44, 22, R.laci3, o);
-        kutu(330, yy - 22, Math.max(8, 420 * s[1] / 100 * a), 44, 22, s[1] < 10 ? R.mercan : R.yesil, o);
-        yazi("%" + Math.round(s[1] * a), 800, yy, 30, s[1] < 10 ? R.mercan : R.yesil, o * a, 800, "left"); });
-    } }
-
-  // ---------- SAHNE 6: bulgu 2 – CDN (31–37.5) ------------------------------------------------
-  { const o = goster(t, 31, 37.5, .4);
-    if (o > 0) {
-      const a = eio(ilerle(t, 31.2, 32.8));
-      const solN = V.cdn_n, sol = izgara(solN, 150, 330, 620, 520), sag = izgara(V.oz_n, 1000, 330, 780, 520);
-      let ci = 0, oi = 0;
-      nokta.forEach((p, k) => { const s = SINIF[k]; const hedef = s < 2 ? sol[ci++] : sag[oi++];
-        const x = lerp(p[0], hedef[0], a), y = lerp(p[1], hedef[1], a), r = lerp(p[2], hedef[2], a) * .32;
-        daire(x, y, Math.min(r, 14), (s === 0 || s === 2) ? R.yesil : R.acik, o * ((s === 0 || s === 2) ? 1 : .45)); });
-      const b = eo(ilerle(t, 32.8, 33.8));
-      yazi("CDN arkasında", 460, 250, 40, R.beyaz, o * b, 700);
-      yazi("Kendi sunucusu", 1390, 250, 40, R.beyaz, o * b, 700);
-      yazi("%" + (100 * V.cdn_k / V.cdn_n).toFixed(1).replace(".", ","), 460, 920, 96, R.yesil, o * b, 800);
-      yazi("%" + (100 * V.oz_k / V.oz_n).toFixed(1).replace(".", ","), 1390, 920, 96, R.mercan, o * b, 800);
-      const c = eo(ilerle(t, 34.4, 35.2));
-      kutu(460, 70, 1000, 100, 50, R.laci3, o * c);
-      yazi("Belirleyici sektör değil, altyapı", W / 2, 120, 44, R.nane, o * c, 700);
-    } }
-
-  // ---------- SAHNE 7: ağ maliyeti (37.5–44) --------------------------------------------------
-  { const o = goster(t, 37.5, 44, .4);
-    if (o > 0) {
-      yazi("Bedeli: ilk mesaj iki pakete bölünüyor", W / 2, 160, 56, R.beyaz, o, 700);
-      const olc = 1100 / 1600, x0 = 360;
-      yazi("Klasik", x0 - 30, 380, 32, R.acik, o, 600, "right");
-      kutu(x0, 350, V.ch_k * olc, 60, 12, R.mavi, o); yazi(V.ch_k + " B", x0 + V.ch_k * olc + 20, 380, 30, R.mavi, o, 700, "left");
-      const g = eo(ilerle(t, 38.4, 40.0));
-      const L = lerp(V.ch_k, V.ch_h, g) * olc;
-      yazi("Hibrit", x0 - 30, 520, 32, R.acik, o, 600, "right");
-      kutu(x0, 490, L, 60, 12, R.yesil, o); yazi(Math.round(lerp(V.ch_k, V.ch_h, g)) + " B", x0 + L + 20, 520, 30, R.yesil, o, 700, "left");
-      const sx = x0 + 1460 * olc;
-      cizgi(sx, 300, sx, 600, R.mercan, 4, o, [14, 10]); yazi("1 TCP paketi = 1460 B", sx, 280, 24, R.mercan, o, 700);
-      const p = eo(ilerle(t, 40.4, 41.6));
-      if (p > 0) {   // iki paket kablo üzerinde ilerler
-        cizgi(300, 760, 1620, 760, R.gri, 3, o * p, [8, 10]);
-        const ilk = lerp(300, 1180, p);
-        paket(ilk, 760, 300, R.yesil, "Paket 1 · 1460 B", o * p);
-        paket(ilk - 130 - 20, 760, 120, R.amber, "Paket 2", o * p);
-      }
-      const q = eo(ilerle(t, 41.6, 42.4));
-      yazi("+" + (V.ek / 1000).toFixed(1).replace(".", ",") + " KB her bağlantıda  ·  kayıplı ağda daha yavaş", W / 2, 920, 36, R.nane, o * q, 600);
-    } }
-
-  // ---------- SAHNE 8: kapanış (44–49) ---------------------------------------------------------
-  { const o = goster(t, 44, 49.6, .6);
-    if (o > 0) {
-      const a = eo(ilerle(t, 44.3, 45.3)), b = eo(ilerle(t, 45.2, 46.2)), c = eo(ilerle(t, 46.4, 47.2));
-      yazi("Geçiş başladı —", W / 2, 400, 72, R.beyaz, o * a, 700);
-      yazi("ama kurumlar değil, CDN'ler sayesinde.", W / 2, 500, 72, R.nane, o * b, 700);
-      cizgi(W / 2 - 60, 600, W / 2 + 60, 600, R.yesil, 5, o * c);
-      yazi("Rümeysa Betül Özyurt · Veri İletişimi (BİL321)", W / 2, 680, 32, R.acik, o * c, 500);
-      yazi("İstanbul Ticaret Üniversitesi · 2026", W / 2, 730, 28, R.gri, o * c, 400);
-    } }
-}
-window.render = render;
-window.SURE = 49.6;
-// Tarayıcıda açıldığında canlı önizleme
-if (!window.KAYIT) { const t0 = performance.now(); (function d() { render(((performance.now() - t0) / 1000) % window.SURE); requestAnimationFrame(d); })(); }
+// ---------------- ana render --------------------------------------------------------------
+function render(t){arkaPlan(t);const S=V.sahneler;
+  for(let i=0;i<S.length;i++){const s=S[i],d=s.son-s.bas;if(t<s.bas-.6||t>s.son+.6)continue;
+    const lt=t-s.bas,o=Math.min(eo(ilerle(t,s.bas-.1,s.bas+.5)),1-eo(ilerle(t,s.son-.45,s.son+.05)));
+    // giriş: hafif yakınlaşma (kamera)
+    const z=1+.04*(1-eo(ilerle(lt,0,1.2)));X.save();X.translate(W/2,H/2);X.scale(z,z);X.translate(-W/2,-H/2);
+    if(o>0)SAHNE[i](lt,d,o);X.restore();}
+  // sahne geçişi: ışık süpürmesi
+  for(const s of S.slice(1)){const p=ilerle(t,s.bas-.35,s.bas+.35);if(p>0&&p<1){const x=lerp(-400,W+400,eio(p));
+    const g=X.createLinearGradient(x-300,0,x+300,0);g.addColorStop(0,"rgba(166,240,212,0)");g.addColorStop(.5,"rgba(166,240,212,.18)");g.addColorStop(1,"rgba(166,240,212,0)");
+    X.fillStyle=g;X.fillRect(0,0,W,H);}}
+  altyazi(t);
+  // ilerleme çubuğu
+  const top=S[S.length-1].son;kutu(0,H-6,W*kis(t/top,0,1),6,0,R.yesil,.8);}
+window.render=render;window.SURE=V.sahneler[V.sahneler.length-1].son;
+if(!window.KAYIT){const t0=performance.now();(function d(){render(((performance.now()-t0)/1000)%window.SURE);requestAnimationFrame(d);})();}
 </script>
 </body>
 </html>
