@@ -75,7 +75,7 @@ SAHNE = [
      ["Bedeli de var: tarayıcının ilk mesajı tek bir paketi aşıyor ve ikiye bölünüyor.",
       "Kayıplı ağlarda bağlantı yavaşlıyor."]),
     ("Geçiş başladı. Ama bankalar ve kamu, hâlâ geride. Rümeysa Betül Özyurt, Veri İletişimi.",
-     ["Geçiş başladı; ama bankalar ve kamu hâlâ geride.", "Rümeysa Betül Özyurt"]),
+     ["Geçiş başladı; ama bankalar ve kamu hâlâ geride.", "Rümeysa Betül Özyurt · Veri İletişimi"]),
 ]
 EN_AZ = [5.0, 6.5, 6.0, 5.5, 6.0, 7.0, 7.5, 5.0]   # animasyonun ihtiyaç duyduğu en kısa sahne süreleri
 
@@ -182,7 +182,11 @@ DOGAL_FILTRE = ("highpass=f=80,equalizer=f=180:t=q:w=1:g=2.5,equalizer=f=3500:t=
                 "aecho=0.85:0.5:28|47:0.10|0.06,loudnorm=I=-18:TP=-2:LRA=9")
 
 
-def dis_ses_bol(yol, klasor, n=8, kesimler=None, dogal=True):
+# Zaten doğal olan sesler (ör. ElevenLabs) için yalnızca hafif sıkıştırma ve ses yüksekliği ayarı
+HAFIF_FILTRE = "highpass=f=70,acompressor=threshold=-18dB:ratio=2:attack=20:release=250:makeup=1,loudnorm=I=-18:TP=-2:LRA=9"
+
+
+def dis_ses_bol(yol, klasor, n=8, kesimler=None, dogal=True, filtre=None):
     """Clipchamp/ElevenLabs'ten gelen tek dosyayı (veya sahne_1..8 dosyalarını) sahnelere böler.
     Tek dosyada sahneler arasındaki en uzun n-1 sessizlikten bölünür."""
     os.makedirs(klasor, exist_ok=True)
@@ -195,7 +199,7 @@ def dis_ses_bol(yol, klasor, n=8, kesimler=None, dogal=True):
     parcalar = []
     for k in kaynaklar:
         w = os.path.join(klasor, "_donusum.wav")
-        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", k] + (["-af", DOGAL_FILTRE] if dogal else []) +
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", k] + (["-af", filtre or DOGAL_FILTRE] if dogal else []) +
                        ["-ac", "1", "-ar", str(SR), w], check=True)
         parcalar.append(wav_oku(w))
     if len(parcalar) == n:
@@ -239,11 +243,13 @@ def main():
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--yalniz-ses", action="store_true")
     ap.add_argument("--dis-ses", help="Clipchamp/ElevenLabs ses dosyası veya sahne_1..8 dosyalarının klasörü")
+    ap.add_argument("--filtre", choices=["dogal", "hafif"], default="dogal")
     ap.add_argument("--kesimler", help="Tek dosyada sahne sınırları (sn), virgülle: 7.83,13.58,...")
     a = ap.parse_args()
     gecici = os.path.join(BURADA, "_ses")
     kes = [float(x) for x in a.kesimler.split(",")] if a.kesimler else None
-    sesler = dis_ses_bol(a.dis_ses, gecici, kesimler=kes) if a.dis_ses else seslendir(a.model, gecici)
+    sesler = dis_ses_bol(a.dis_ses, gecici, kesimler=kes,
+                                    filtre=HAFIF_FILTRE if a.filtre == "hafif" else DOGAL_FILTRE) if a.dis_ses else seslendir(a.model, gecici)
     sahneler = zaman_cizelgesi(sesler)
     json.dump(sahneler, open(os.path.join(BURADA, "zaman.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     ses_yolu = os.path.join(gecici, "ses.wav")

@@ -1,58 +1,58 @@
 [
  {
   "bas": 0.0,
-  "son": 9.023,
+  "son": 8.209,
   "konusma_bas": 0.9,
-  "konusma_son": 8.473,
+  "konusma_son": 7.659,
   "cumleler": [
    "Bugün şifrelenen internet trafiği, yarın bir kuantum bilgisayarla çözülebilir.",
    "Türk web siteleri buna hazır mı?"
   ]
  },
  {
-  "bas": 9.023,
-  "son": 15.523,
-  "konusma_bas": 9.573,
-  "konusma_son": 14.727,
+  "bas": 8.209,
+  "son": 15.071,
+  "konusma_bas": 8.759,
+  "konusma_son": 14.521,
   "cumleler": [
    "Saldırganlar şifreli trafiği bugün kaydedip yarın çözebilir:",
    "\"Şimdi topla, sonra çöz.\""
   ]
  },
  {
-  "bas": 15.523,
-  "son": 23.375,
-  "konusma_bas": 16.073,
-  "konusma_son": 22.825,
+  "bas": 15.071,
+  "son": 23.784,
+  "konusma_bas": 15.621,
+  "konusma_son": 23.234,
   "cumleler": [
    "Çözüm hazır: klasik anahtar, kuantuma dayanıklı ML-KEM ile birleşiyor.",
    "Biri kırılsa da diğeri korur."
   ]
  },
  {
-  "bas": 23.375,
-  "son": 28.875,
-  "konusma_bas": 23.925,
-  "konusma_son": 27.889,
+  "bas": 23.784,
+  "son": 29.284,
+  "konusma_bas": 24.334,
+  "konusma_son": 28.313,
   "cumleler": [
    "Yedi kritik sektörden 500 siteyi geliştirdiğim araçla ölçtüm."
   ]
  },
  {
-  "bas": 28.875,
-  "son": 35.623,
-  "konusma_bas": 29.425,
-  "konusma_son": 35.073,
+  "bas": 29.284,
+  "son": 36.488,
+  "konusma_bas": 29.834,
+  "konusma_son": 35.938,
   "cumleler": [
    "Hazır site oranı yalnızca %28.",
    "44 bankadan ise sadece 1 tanesi hazır."
   ]
  },
  {
-  "bas": 35.623,
-  "son": 44.934,
-  "konusma_bas": 36.173,
-  "konusma_son": 44.384,
+  "bas": 36.488,
+  "son": 46.516,
+  "konusma_bas": 37.038,
+  "konusma_son": 45.966,
   "cumleler": [
    "Belirleyici olan altyapı:",
    "CDN kullanan sitelerde oran %94,",
@@ -60,23 +60,23 @@
   ]
  },
  {
-  "bas": 44.934,
-  "son": 53.822,
-  "konusma_bas": 45.484,
-  "konusma_son": 53.272,
+  "bas": 46.516,
+  "son": 55.129,
+  "konusma_bas": 47.066,
+  "konusma_son": 54.579,
   "cumleler": [
    "Bedeli de var: tarayıcının ilk mesajı tek bir paketi aşıyor ve ikiye bölünüyor.",
    "Kayıplı ağlarda bağlantı yavaşlıyor."
   ]
  },
  {
-  "bas": 53.822,
-  "son": 61.918,
-  "konusma_bas": 54.372,
-  "konusma_son": 60.168,
+  "bas": 55.129,
+  "son": 63.934,
+  "konusma_bas": 55.679,
+  "konusma_son": 62.184,
   "cumleler": [
    "Geçiş başladı; ama bankalar ve kamu hâlâ geride.",
-   "Rümeysa Betül Özyurt"
+   "Rümeysa Betül Özyurt · Veri İletişimi"
   ]
  }
 ]
