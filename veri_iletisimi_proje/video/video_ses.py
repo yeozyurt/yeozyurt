@@ -173,14 +173,61 @@ def karistir(sesler, sahneler, yol):
     return sure
 
 
+def dis_ses_bol(yol, klasor, n=8):
+    """Clipchamp/ElevenLabs'ten gelen tek dosyayı (veya sahne_1..8 dosyalarını) sahnelere böler.
+    Tek dosyada sahneler arasındaki en uzun n-1 sessizlikten bölünür."""
+    os.makedirs(klasor, exist_ok=True)
+    if os.path.isdir(yol):
+        dosyalar = sorted((f for f in os.listdir(yol) if f.lower().startswith("sahne")),
+                          key=lambda f: int("".join(c for c in f if c.isdigit()) or 0))
+        kaynaklar = [os.path.join(yol, f) for f in dosyalar]
+    else:
+        kaynaklar = [yol]
+    parcalar = []
+    for k in kaynaklar:
+        w = os.path.join(klasor, "_donusum.wav")
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", k, "-ac", "1", "-ar", str(SR), w], check=True)
+        parcalar.append(wav_oku(w))
+    if len(parcalar) == n:
+        sesler = parcalar
+    else:
+        x = parcalar[0]
+        pen = int(0.05 * SR)
+        enerji = np.sqrt(np.convolve(x ** 2, np.ones(pen) / pen, "same"))
+        sessiz = enerji < 0.01
+        # sessiz aralıkları bul
+        araliklar, i = [], 0
+        while i < len(x):
+            if sessiz[i]:
+                j = i
+                while j < len(x) and sessiz[j]:
+                    j += 1
+                araliklar.append((i, j)); i = j
+            else:
+                i += 1
+        ic = [a for a in araliklar if a[0] > 0 and a[1] < len(x)]
+        kesim = sorted(sorted(ic, key=lambda a: a[1] - a[0], reverse=True)[: n - 1])
+        if len(kesim) < n - 1:
+            raise SystemExit(f"Yalnızca {len(kesim) + 1} parça bulundu; sahneler arasında 1–2 sn boşluk bırakın.")
+        sinir = [0] + [(a + b) // 2 for a, b in kesim] + [len(x)]
+        sesler = [x[sinir[k]: sinir[k + 1]] for k in range(n)]
+    sonuc = []
+    for x in sesler:   # baş/son sessizliği kırp, ses seviyesini eşitle
+        e = np.where(np.abs(x) > 0.02)[0]
+        x = x[max(0, e[0] - 800): e[-1] + 3000] if len(e) else x
+        sonuc.append((x / (np.max(np.abs(x)) + 1e-9) * 0.9).astype(np.float32))
+    return sonuc
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="/opt/piper/tr_TR-dfki-medium.onnx")
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--yalniz-ses", action="store_true")
+    ap.add_argument("--dis-ses", help="Clipchamp/ElevenLabs ses dosyası veya sahne_1..8 dosyalarının klasörü")
     a = ap.parse_args()
     gecici = os.path.join(BURADA, "_ses")
-    sesler = seslendir(a.model, gecici)
+    sesler = dis_ses_bol(a.dis_ses, gecici) if a.dis_ses else seslendir(a.model, gecici)
     sahneler = zaman_cizelgesi(sesler)
     json.dump(sahneler, open(os.path.join(BURADA, "zaman.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     ses_yolu = os.path.join(gecici, "ses.wav")
