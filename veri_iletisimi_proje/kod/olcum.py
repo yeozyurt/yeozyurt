@@ -41,7 +41,9 @@ import ssl
 import statistics
 import subprocess
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 # Windows'ta OpenSSL çıktısı (ör. sertifikadaki Türkçe karakterler) UTF-8 gelir;
 # konsolun Türkçe kod sayfası (cp1254) ile okunursa hata verir. Bu yüzden tüm
@@ -355,6 +357,8 @@ def main():
                     help="Siteler arası bekleme (sn) - sunucuları yormamak için")
     ap.add_argument("--zaman-asimi", type=float, default=10.0)
     ap.add_argument("--sinir", type=int, default=0, help="Yalnız ilk N siteyi ölç (pilot)")
+    ap.add_argument("--paralel", type=int, default=1,
+                    help="Aynı anda ölçülecek FARKLI site sayısı (500 site için 4 önerilir)")
     a = ap.parse_args()
 
     surum = openssl_kontrol(a.openssl)
@@ -368,26 +372,35 @@ def main():
         with open(a.cikti, newline="", encoding="utf-8") as f:
             yapilmis = {r["alan_adi"] for r in csv.DictReader(f)}
 
-    print(f"{surum} | {len(siteler)} site | {len(yapilmis)} tanesi zaten ölçülmüş")
+    print(f"{surum} | {len(siteler)} site | {len(yapilmis)} tanesi zaten ölçülmüş | paralel={a.paralel}")
+    kilit = threading.Lock()
+    sayac = [0]
+    bekleyen = [(s, al) for s, al in siteler if al not in yapilmis]
+
+    def is_parcasi(sektor, alan):
+        # Her site yine sıralı ve tek bağlantıyla ölçülür; paralellik yalnızca
+        # FARKLI siteler arasındadır, tek bir sunucuya binen yük artmaz.
+        try:
+            satir = siteyi_olc(a.openssl, sektor, alan, a.tekrar, a.zaman_asimi)
+        except Exception as e:  # tek bir site tüm ölçümü durdurmasın
+            satir = {k: "" for k in ALANLAR}
+            satir.update(sektor=sektor, alan_adi=alan, durum="beklenmeyen_hata",
+                         notlar=f"{type(e).__name__}: {e}"[:200])
+        with kilit:
+            yazici.writerow(satir)
+            f.flush()
+            sayac[0] += 1
+            print(f"[{sayac[0]:>3}/{len(bekleyen)}] {alan:<34} {satir['durum']:<12} "
+                  f"TLS={satir['tls_surumu'] or '-':<8} PQ={satir['pq_destek']!s:<5} "
+                  f"grup={satir['secilen_grup'] or '-'}")
+        time.sleep(a.bekleme)
+
     with open(a.cikti, "a", newline="", encoding="utf-8") as f:
         yazici = csv.DictWriter(f, fieldnames=ALANLAR)
         if yeni_dosya:
             yazici.writeheader()
-        for i, (sektor, alan) in enumerate(siteler, 1):
-            if alan in yapilmis:
-                continue
-            try:
-                satir = siteyi_olc(a.openssl, sektor, alan, a.tekrar, a.zaman_asimi)
-            except Exception as e:  # tek bir site tüm ölçümü durdurmasın
-                satir = {k: "" for k in ALANLAR}
-                satir.update(sektor=sektor, alan_adi=alan, durum="beklenmeyen_hata",
-                             notlar=f"{type(e).__name__}: {e}"[:200])
-            yazici.writerow(satir)
-            f.flush()
-            print(f"[{i:>3}/{len(siteler)}] {alan:<32} {satir['durum']:<12} "
-                  f"TLS={satir['tls_surumu'] or '-':<8} PQ={satir['pq_destek']!s:<5} "
-                  f"grup={satir['secilen_grup'] or '-'}")
-            time.sleep(a.bekleme)
+        with ThreadPoolExecutor(max_workers=max(1, a.paralel)) as ex:
+            list(ex.map(lambda x: is_parcasi(*x), bekleyen))
     print(f"Bitti. Sonuçlar: {a.cikti}")
 
 
