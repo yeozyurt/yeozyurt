@@ -135,7 +135,7 @@ Banka,www.hayatfinans.com.tr
 Banka,www.dunyakatilim.com.tr
 Banka,www.tombank.com.tr
 Banka,www.eximbank.gov.tr
-Banka,www.iller.gov.tr
+Banka,www.ilbank.gov.tr
 Banka,www.kalkinma.com.tr
 Banka,www.tskb.com.tr
 Banka,www.nurolbank.com.tr
@@ -162,11 +162,11 @@ SigortaFinans,www.unicosigorta.com.tr
 SigortaFinans,www.dogasigorta.com
 SigortaFinans,www.bereketsigorta.com.tr
 SigortaFinans,www.ankarasigorta.com.tr
-SigortaFinans,www.generali.com.tr
+SigortaFinans,www.hepiyi.com.tr
 SigortaFinans,www.agesa.com.tr
 SigortaFinans,www.anadoluhayat.com.tr
 SigortaFinans,www.metlife.com.tr
-SigortaFinans,www.vakifemeklilik.com.tr
+SigortaFinans,www.turkiyehayatemeklilik.com.tr
 SigortaFinans,www.bnpparibascardif.com.tr
 SigortaFinans,www.katilimemeklilik.com.tr
 SigortaFinans,www.borsaistanbul.com
@@ -247,7 +247,7 @@ Kamu,www.malatya.bel.tr
 Kamu,www.mersin.bel.tr
 Kamu,www.mugla.bel.tr
 Kamu,www.ordu.bel.tr
-Kamu,www.sakarya.bel.tr
+Kamu,sakarya.bel.tr
 Kamu,www.samsun.bel.tr
 Kamu,www.sanliurfa.bel.tr
 Kamu,www.tekirdag.bel.tr
@@ -342,14 +342,14 @@ Universite,www.yyu.edu.tr
 Universite,www.yalova.edu.tr
 Universite,www.bozok.edu.tr
 Universite,www.beun.edu.tr
-Universite,www.ahbv.edu.tr
+Universite,www.hbv.edu.tr
 Universite,www.aybu.edu.tr
 Universite,www.asbu.edu.tr
 Universite,www.sbu.edu.tr
 Universite,www.iste.edu.tr
 Universite,www.atu.edu.tr
 Universite,www.msgsu.edu.tr
-Universite,www.gsu.edu.tr
+Universite,gsu.edu.tr
 Universite,www.tau.edu.tr
 Universite,www.atilim.edu.tr
 Universite,www.cankaya.edu.tr
@@ -463,7 +463,7 @@ Altyapi,www.turknet.com.tr
 Altyapi,www.millenicom.com.tr
 Altyapi,www.dsmart.com.tr
 Altyapi,www.turksat.com.tr
-Altyapi,www.nic.tr
+Altyapi,www.trabis.gov.tr
 Altyapi,www.botas.gov.tr
 Altyapi,www.teias.gov.tr
 Altyapi,www.euas.gov.tr
