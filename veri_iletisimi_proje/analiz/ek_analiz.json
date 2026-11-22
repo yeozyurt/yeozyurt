@@ -1,0 +1,624 @@
+{
+ "sektor": [
+  {
+   "sektor": "Banka",
+   "n": 27,
+   "tls13": 48.1,
+   "tls12": 51.9,
+   "pq": 0.0,
+   "pq_k": 0,
+   "pq_ci": [
+    0.0,
+    12.5
+   ],
+   "cdn": 0.0,
+   "http3": 0.0
+  },
+  {
+   "sektor": "Kamu",
+   "n": 33,
+   "tls13": 66.7,
+   "tls12": 33.3,
+   "pq": 3.0,
+   "pq_k": 1,
+   "pq_ci": [
+    0.5,
+    15.3
+   ],
+   "cdn": 3.0,
+   "http3": 0.0
+  },
+  {
+   "sektor": "Üniversite",
+   "n": 39,
+   "tls13": 82.1,
+   "tls12": 17.9,
+   "pq": 17.9,
+   "pq_k": 7,
+   "pq_ci": [
+    9.0,
+    32.7
+   ],
+   "cdn": 12.8,
+   "http3": 7.7
+  },
+  {
+   "sektor": "E-ticaret",
+   "n": 30,
+   "tls13": 93.3,
+   "tls12": 6.7,
+   "pq": 80.0,
+   "pq_k": 24,
+   "pq_ci": [
+    62.7,
+    90.5
+   ],
+   "cdn": 83.3,
+   "http3": 40.0
+  },
+  {
+   "sektor": "TÜMÜ",
+   "n": 129,
+   "tls13": 73.6,
+   "tls12": 26.4,
+   "pq": 24.8,
+   "pq_k": 32,
+   "pq_ci": [
+    18.2,
+    32.9
+   ],
+   "cdn": 24.0,
+   "http3": 11.6
+  }
+ ],
+ "cdn_fisher": {
+  "cdn": "30/31",
+  "kendi": "2/98",
+  "p": 7.502095622842968e-26,
+  "cdn_ci": [
+   83.8,
+   99.4
+  ],
+  "kendi_ci": [
+   0.6,
+   7.1
+  ]
+ },
+ "banka_eticaret_fisher": {
+  "banka": "0/27",
+  "eticaret": "24/30",
+  "p": 1.493154880406937e-10
+ },
+ "katman_kendi_sunucu": {
+  "Banka": "0/27",
+  "Kamu": "0/32",
+  "Üniversite": "2/34",
+  "E-ticaret": "0/5"
+ },
+ "katman_cdn": {
+  "Banka": "0/0",
+  "Kamu": "1/1",
+  "Üniversite": "5/5",
+  "E-ticaret": "24/25"
+ },
+ "sektor_kikare_katmansiz": {
+  "chi2": 67.28,
+  "p": 1.6348572498696116e-14
+ },
+ "sektor_permutasyon_cdn_katmanli": {
+  "istatistik": 0.085,
+  "p": 0.5167
+ },
+ "cdn_saglayicilar": {
+  "Cloudflare": 21,
+  "CloudFront": 5,
+  "Akamai": 4,
+  "Imperva": 1
+ },
+ "cdn_ip_duzeltme": [
+  "www.beymen.com",
+  "www.defacto.com.tr"
+ ],
+ "cdn_arkasinda_destek_yok": [
+  [
+   "n11",
+   "TLSv1.2"
+  ]
+ ],
+ "kendi_sunucu_destek_var": [
+  "Universite",
+  "Universite"
+ ],
+ "hrr": [
+  [
+   "Banka",
+   "prime256v1"
+  ]
+ ],
+ "secilen_grup_tls13_pqsiz": {
+  "X25519": 62,
+  "prime256v1": 1
+ },
+ "sertifika": {
+  "RSA-2048": 107,
+  "RSA-4096": 9,
+  "EC-256": 11,
+  "RSA-3072": 2
+ },
+ "ag": {
+  "n": 32,
+  "ch_klasik": 232.0,
+  "ch_hibrit": 1416.0,
+  "sh_klasik": 122.0,
+  "sh_hibrit": 1210.0,
+  "sh_hibrit_min": 1210.0,
+  "sh_hibrit_max": 1210.0,
+  "yazilan_fark": 1184.0,
+  "okunan_fark": 1088.0,
+  "okunan_klasik": 4512.0,
+  "okunan_hibrit": 5600.0,
+  "tarayici_ch_medyan": 1534.0,
+  "tarayici_ch_min": 1529.0,
+  "tarayici_ch_max": 1543.0,
+  "tarayici_iki_segment": 129,
+  "sure_farki_medyan_tur2": -1.1000000000000227,
+  "sure_farki_medyan_tur1": 0.3500000000001364,
+  "rtt_medyan_tur1": 19.23,
+  "rtt_medyan_tur2": 20.03,
+  "rtt_medyan_cdn": 17.7,
+  "rtt_medyan_kendi": 20.134999999999998,
+  "sure_wilcoxon_p": 0.6334807704149548
+ },
+ "tutarlilik": {
+  "ayni_site": 129,
+  "toplam": 129,
+  "ip_degisen": 16,
+  "rtt_pearson": 0.85,
+  "rtt_ort_mutlak_fark": 6.9
+ },
+ "olcek": {
+  "ek_bayt_el_sikisma": 2272.0,
+  "gunluk_1milyon_el_sikisma_GB": 2.27,
+  "sayfa_2MB_orani_yuzde": 0.114
+ },
+ "simulasyon": {
+  "sf_klasik_seg": 4,
+  "sf_hibrit_seg": 4,
+  "rtt20": [
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.0,
+    "rtt_ms": 20.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 40.0,
+    "medyan_ms": 40.0,
+    "p95_ms": 40.0,
+    "gecikme_olasiligi": 0.0,
+    "analitik_olasilik": 0.0
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.0,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 40.0,
+    "medyan_ms": 40.0,
+    "p95_ms": 40.0,
+    "gecikme_olasiligi": 0.0,
+    "analitik_olasilik": 0.0
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.0,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 40.0,
+    "medyan_ms": 40.0,
+    "p95_ms": 40.0,
+    "gecikme_olasiligi": 0.0,
+    "analitik_olasilik": 0.0
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.005,
+    "rtt_ms": 20.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 55.3,
+    "medyan_ms": 40.0,
+    "p95_ms": 40.0,
+    "gecikme_olasiligi": 0.0346,
+    "analitik_olasilik": 0.0345
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.005,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 57.2,
+    "medyan_ms": 40.0,
+    "p95_ms": 40.0,
+    "gecikme_olasiligi": 0.0399,
+    "analitik_olasilik": 0.0393
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.005,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 56.5,
+    "medyan_ms": 40.0,
+    "p95_ms": 40.0,
+    "gecikme_olasiligi": 0.0396,
+    "analitik_olasilik": 0.0393
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.01,
+    "rtt_ms": 20.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 72.9,
+    "medyan_ms": 40.0,
+    "p95_ms": 260.0,
+    "gecikme_olasiligi": 0.0685,
+    "analitik_olasilik": 0.0679
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.01,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 74.0,
+    "medyan_ms": 40.0,
+    "p95_ms": 260.0,
+    "gecikme_olasiligi": 0.078,
+    "analitik_olasilik": 0.0773
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.01,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 73.1,
+    "medyan_ms": 40.0,
+    "p95_ms": 260.0,
+    "gecikme_olasiligi": 0.0752,
+    "analitik_olasilik": 0.0773
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.02,
+    "rtt_ms": 20.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 105.6,
+    "medyan_ms": 40.0,
+    "p95_ms": 260.0,
+    "gecikme_olasiligi": 0.134,
+    "analitik_olasilik": 0.1319
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.02,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 109.4,
+    "medyan_ms": 40.0,
+    "p95_ms": 260.0,
+    "gecikme_olasiligi": 0.1511,
+    "analitik_olasilik": 0.1492
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.02,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 109.9,
+    "medyan_ms": 40.0,
+    "p95_ms": 260.0,
+    "gecikme_olasiligi": 0.152,
+    "analitik_olasilik": 0.1492
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.05,
+    "rtt_ms": 20.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 222.3,
+    "medyan_ms": 40.0,
+    "p95_ms": 1040.0,
+    "gecikme_olasiligi": 0.3035,
+    "analitik_olasilik": 0.3017
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.05,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 231.7,
+    "medyan_ms": 40.0,
+    "p95_ms": 1040.0,
+    "gecikme_olasiligi": 0.3385,
+    "analitik_olasilik": 0.3366
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.05,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 229.4,
+    "medyan_ms": 40.0,
+    "p95_ms": 1040.0,
+    "gecikme_olasiligi": 0.3342,
+    "analitik_olasilik": 0.3366
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.1,
+    "rtt_ms": 20.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 471.4,
+    "medyan_ms": 260.0,
+    "p95_ms": 1480.0,
+    "gecikme_olasiligi": 0.5216,
+    "analitik_olasilik": 0.5217
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.1,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 503.7,
+    "medyan_ms": 260.0,
+    "p95_ms": 1480.0,
+    "gecikme_olasiligi": 0.5694,
+    "analitik_olasilik": 0.5695
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.1,
+    "rtt_ms": 20.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 498.1,
+    "medyan_ms": 260.0,
+    "p95_ms": 1580.0,
+    "gecikme_olasiligi": 0.5682,
+    "analitik_olasilik": 0.5695
+   }
+  ],
+  "rtt65": [
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.0,
+    "rtt_ms": 65.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 130.0,
+    "medyan_ms": 130.0,
+    "p95_ms": 130.0,
+    "gecikme_olasiligi": 0.0,
+    "analitik_olasilik": 0.0
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.0,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 130.0,
+    "medyan_ms": 130.0,
+    "p95_ms": 130.0,
+    "gecikme_olasiligi": 0.0,
+    "analitik_olasilik": 0.0
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.0,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 130.0,
+    "medyan_ms": 130.0,
+    "p95_ms": 130.0,
+    "gecikme_olasiligi": 0.0,
+    "analitik_olasilik": 0.0
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.005,
+    "rtt_ms": 65.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 146.5,
+    "medyan_ms": 130.0,
+    "p95_ms": 130.0,
+    "gecikme_olasiligi": 0.0346,
+    "analitik_olasilik": 0.0345
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.005,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 148.5,
+    "medyan_ms": 130.0,
+    "p95_ms": 130.0,
+    "gecikme_olasiligi": 0.0399,
+    "analitik_olasilik": 0.0393
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.005,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 147.8,
+    "medyan_ms": 130.0,
+    "p95_ms": 130.0,
+    "gecikme_olasiligi": 0.0396,
+    "analitik_olasilik": 0.0393
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.01,
+    "rtt_ms": 65.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 165.2,
+    "medyan_ms": 130.0,
+    "p95_ms": 395.0,
+    "gecikme_olasiligi": 0.0685,
+    "analitik_olasilik": 0.0679
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.01,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 166.8,
+    "medyan_ms": 130.0,
+    "p95_ms": 395.0,
+    "gecikme_olasiligi": 0.078,
+    "analitik_olasilik": 0.0773
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.01,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 165.8,
+    "medyan_ms": 130.0,
+    "p95_ms": 395.0,
+    "gecikme_olasiligi": 0.0752,
+    "analitik_olasilik": 0.0773
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.02,
+    "rtt_ms": 65.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 200.4,
+    "medyan_ms": 130.0,
+    "p95_ms": 395.0,
+    "gecikme_olasiligi": 0.134,
+    "analitik_olasilik": 0.1319
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.02,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 205.1,
+    "medyan_ms": 130.0,
+    "p95_ms": 395.0,
+    "gecikme_olasiligi": 0.1511,
+    "analitik_olasilik": 0.1492
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.02,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 205.6,
+    "medyan_ms": 130.0,
+    "p95_ms": 395.0,
+    "gecikme_olasiligi": 0.152,
+    "analitik_olasilik": 0.1492
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.05,
+    "rtt_ms": 65.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 324.1,
+    "medyan_ms": 130.0,
+    "p95_ms": 1130.0,
+    "gecikme_olasiligi": 0.3035,
+    "analitik_olasilik": 0.3017
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.05,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 336.2,
+    "medyan_ms": 130.0,
+    "p95_ms": 1130.0,
+    "gecikme_olasiligi": 0.3385,
+    "analitik_olasilik": 0.3366
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.05,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 333.6,
+    "medyan_ms": 130.0,
+    "p95_ms": 1130.0,
+    "gecikme_olasiligi": 0.3342,
+    "analitik_olasilik": 0.3366
+   },
+   {
+    "senaryo": "Klasik",
+    "kayip": 0.1,
+    "rtt_ms": 65.0,
+    "ch_seg": 1,
+    "sf_seg": 4,
+    "ortalama_ms": 587.1,
+    "medyan_ms": 395.0,
+    "p95_ms": 1660.0,
+    "gecikme_olasiligi": 0.5216,
+    "analitik_olasilik": 0.5217
+   },
+   {
+    "senaryo": "Hibrit (tarayıcı)",
+    "kayip": 0.1,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 624.2,
+    "medyan_ms": 395.0,
+    "p95_ms": 1720.0,
+    "gecikme_olasiligi": 0.5694,
+    "analitik_olasilik": 0.5695
+   },
+   {
+    "senaryo": "Tarayıcı → klasik sunucu",
+    "kayip": 0.1,
+    "rtt_ms": 65.0,
+    "ch_seg": 2,
+    "sf_seg": 4,
+    "ortalama_ms": 619.1,
+    "medyan_ms": 395.0,
+    "p95_ms": 1925.0,
+    "gecikme_olasiligi": 0.5682,
+    "analitik_olasilik": 0.5695
+   }
+  ]
+ }
+}
