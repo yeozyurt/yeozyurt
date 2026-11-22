@@ -112,8 +112,8 @@ const SAHNE=[
   const b=eio(ilerle(lt,.6,2.2));
   grup(lerp(420,W/2-90,b),lerp(470,470,b),1.6,o,()=>ikAnahtar(R.mavi));
   grup(lerp(1500,W/2+90,b),470,1.6,o,()=>{X.scale(-1,1);ikAnahtar(R.yesil);});
-  yazi("Klasik · X25519",lerp(420,W/2-260,b),600,32,R.mavi,o*(1-b*.9),700);
-  yazi("Kuantum sonrası · ML-KEM",lerp(1500,W/2+260,b),600,32,R.yesil,o*(1-b*.9),700);
+  yazi("Klasik · X25519",lerp(420,W/2-260,b),600,32,R.mavi,o*(1-b),700);
+  yazi("Kuantum sonrası · ML-KEM",lerp(1500,W/2+260,b),600,32,R.yesil,o*(1-b),700);
   const k=eo(ilerle(lt,2.1,2.9));
   if(k>0){X.save();X.globalAlpha=o*k*.5;X.fillStyle=R.yesil;X.beginPath();X.arc(W/2,480,lerp(0,260,k),0,7);X.fill();X.restore();
     grup(W/2,480,lerp(.5,1.9,geri(k)),o*k,()=>ikKalkan(R.nane,ilerle(lt,2.6,3.4)));}
@@ -121,14 +121,14 @@ const SAHNE=[
   kutu(W/2-330,700,660,110,55,null,o*m,R.nane,4,20);yazi("X25519MLKEM768",W/2,755,56,R.nane,o*m,800);
   yazi("Biri kırılsa bile diğeri korur",W/2,880,34,R.acik,o*m,500);},
 // 4 · Yöntem
-(lt,d,o)=>{yazi("Ölçüm: "+V.n+" site · "+V.sektor.length+" kritik sektör",W/2,120,54,R.beyaz,o*eo(ilerle(lt,0,.6)),800);
+(lt,d,o)=>{yazi("Ölçüm: "+(V.liste||V.n)+" site · "+V.sektor.length+" kritik sektör",W/2,120,54,R.beyaz,o*eo(ilerle(lt,0,.6)),800);
   const g=eo(ilerle(lt,.2,1));grup(380,520,1.5,o*g,()=>ikLaptop());
   yazi("Python + OpenSSL",380,650,30,R.acik,o*g,600);yazi("+ Wireshark",380,695,26,R.gri,o*g,500);
   const ac=ilerle(lt,1.0,d-.6);
   NOK.forEach((p,k)=>{const s=ilerle(ac,sirasi[k]/NOK.length*.85,sirasi[k]/NOK.length*.85+.05);
     if(s>0&&s<1){cizgi(470,520,p[0],p[1],R.nane,2,o*(1-s)*.6);}
     daire(p[0],p[1],p[2]*.33*geri(s),R.acik,o*.95);});
-  yazi(Math.round(V.n*eo(ac))+" / "+V.n,1390,950,44,R.nane,o,800);},
+  yazi(Math.round(V.n*eo(ac))+" / "+V.n,1390,915,40,R.nane,o,800);},
 // 5 · Bulgu 1
 (lt,d,o)=>{const b=eo(ilerle(lt,.2,1.4));
   NOK.forEach((p,k)=>{const h=hazir(SINIF[k]);daire(p[0],p[1],p[2]*.33,h?R.yesil:R.acik,o*(h?1:lerp(.95,.3,b)),h?10*b:0);});
@@ -140,17 +140,19 @@ const SAHNE=[
     kutu(360,yy-19,Math.max(10,380*s[1]/100*a),38,19,dusuk?R.mercan:R.yesil,o*a);
     yazi("%"+Math.round(s[1]*a),760,yy,28,dusuk?R.mercan:R.yesil,o*a,800,"left");});},
 // 6 · Bulgu 2: CDN
-(lt,d,o)=>{const a=eio(ilerle(lt,.3,1.8));const sol=izgara(V.cdn_n,170,420,620,420),sag=izgara(V.oz_n,1010,420,760,420);let ci=0,oi=0;
+(lt,d,o)=>{const a=eio(ilerle(lt,.3,1.8));const sol=izgara(V.cdn_n,170,410,620,390),sag=izgara(V.oz_n,1010,410,760,390);let ci=0,oi=0;
   NOK.forEach((p,k)=>{const s=SINIF[k],hd=s<2?sol[ci++]:sag[oi++],h=hazir(s);
     daire(lerp(p[0],hd[0],a),lerp(p[1],hd[1],a),Math.min(lerp(p[2],hd[2],a)*.33,15),h?R.yesil:R.acik,o*(h?1:.4),h?10:0);});
   const b=eo(ilerle(lt,1.6,2.4));
   grup(480,260,lerp(.4,1,geri(b)),o*b,()=>ikBulut());grup(1390,260,lerp(.4,1,geri(b)),o*b,()=>ikSunucu());
   yazi("CDN arkasında",480,360,36,R.beyaz,o*b,700);yazi("Kendi sunucusu",1390,360,36,R.beyaz,o*b,700);
   const c=eo(ilerle(lt,2.2,3.2));
-  yazi("%"+tr(100*V.cdn_k/V.cdn_n*c),480,930,104,R.yesil,o*c,800,"center",22);
-  yazi("%"+tr(100*V.oz_k/V.oz_n*c),1390,930,104,R.mercan,o*c,800,"center",22);
-  const e=eo(ilerle(lt,d*.6,d*.6+.7));kutu(W/2-430,60,860,96,48,R.kart,o*e,R.nane,3);
-  yazi("Belirleyici sektör değil, altyapı",W/2,108,44,R.nane,o*e,800);},
+  yazi("%"+tr(100*V.cdn_k/V.cdn_n*c),480,900,96,R.yesil,o*c,800,"center",22);
+  yazi("%"+tr(100*V.oz_k/V.oz_n*c),1390,900,96,R.mercan,o*c,800,"center",22);
+  const e=eo(ilerle(lt,1.0,1.7)),f=eo(ilerle(lt,d*.62,d*.62+.6));
+  kutu(W/2-500,60,1000,96,48,R.kart,o*e,f>0?R.yesil:R.nane,3);
+  yazi("Asıl belirleyici: altyapı",W/2,108,44,R.nane,o*e*(1-f),800);
+  if(f>0)yazi("+"+V.kazanan+" kurum son 6 haftada kendi sunucusunda geçti",W/2,108,34,R.yesil,o*f,800);},
 // 7 · Ağ maliyeti
 (lt,d,o)=>{yazi("Bedeli: ilk mesaj iki pakete bölünüyor",W/2,120,56,R.beyaz,o*eo(ilerle(lt,0,.6)),800);
   const olc=1150/1600,x0=330;yazi("Klasik",x0-30,300,32,R.acik,o,600,"right");
@@ -165,12 +167,12 @@ const SAHNE=[
     else{const dus=ilerle(p2,.55,.75);kutu(lerp(240,1600,.55)-110,672+dus*160,90,56,12,R.amber,o*(1-dus));
       if(dus>.3)yazi("kayıp!",lerp(240,1600,.55)-65,880,32,R.mercan,o*kis((dus-.3)*3,0,1),800);
       const re=ilerle(p,.62,.95);if(re>0){const xr=lerp(240,1520,eo(re));kutu(xr,762,90,56,12,R.amber,o);yazi("2 · tekrar",xr+45,840,22,R.amber,o,700);}}}
-  const q=eo(ilerle(lt,d-1.6,d-.8));yazi("+"+tr(V.ek/1000)+" KB her bağlantıda · kayıplı ağda daha yavaş",W/2,975,34,R.nane,o*q,700);},
+  const q=eo(ilerle(lt,d-1.6,d-.8));yazi("+"+tr(V.ek/1000)+" KB her bağlantıda · kayıplı ağda daha yavaş",W/2,925,34,R.nane,o*q,700);},
 // 8 · Kapanış
 (lt,d,o)=>{const k=eo(ilerle(lt,.1,1.0));grup(W/2,330,lerp(.5,1.4,geri(k)),o*k,()=>ikKalkan(R.yesil,1));
   const a=eo(ilerle(lt,.6,1.4)),b=eo(ilerle(lt,1.3,2.1)),c=eo(ilerle(lt,2.2,3.0));
   yazi("Geçiş başladı —",W/2,560,70,R.beyaz,o*a,800);
-  yazi("ama kurumlar değil, CDN'ler sayesinde.",W/2,655,70,R.nane,o*b,800,"center",16);
+  yazi("ama bankalar ve kamu hâlâ geride.",W/2,655,70,R.mercan,o*b,800,"center",16);
   cizgi(W/2-60*c,745,W/2+60*c,745,R.yesil,5,o);
   yazi("Rümeysa Betül Özyurt · Veri İletişimi (BİL321)",W/2,810,32,R.acik,o*c,600);
   yazi("İstanbul Ticaret Üniversitesi · 2026",W/2,860,28,R.gri,o*c,500);},

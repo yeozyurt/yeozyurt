@@ -15,7 +15,10 @@ const VERI = {
   cdn_n: cn, cdn_k: ck, oz_n: on, oz_k: ok_,
   sektor: R.sektor.filter(o => o.sektor !== "TÜMÜ").map(o => [o.sektor, o.pq]),
   ch_k: R.ag.ch_klasik, ch_h: R.ag.tarayici_ch_medyan, ek: R.ag.yazilan_fark + R.ag.okunan_fark,
+  liste: R.liste_boyutu, banka_k: S["Banka"].pq_k, banka_n: S["Banka"].n, kazanan: R.zaman.pq_kazanan,
 };
+const ZY = path.join(__dirname, "zaman.json");
+if (fs.existsSync(ZY)) VERI.sahneler = JSON.parse(fs.readFileSync(ZY, "utf8"));
 
 (async () => {
   const fps = Number(process.argv[2] || 30);
