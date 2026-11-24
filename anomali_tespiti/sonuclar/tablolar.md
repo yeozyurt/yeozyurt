@@ -1,0 +1,149 @@
+
+### Tablo A (AUC): dengeli protokol, 4 fan ID ortalaması, 3 tohum (ort. ± std)
+
+| Yöntem | +6 dB | 0 dB | −6 dB |
+|---|---|---|---|
+| Dense AE, log-mel (Hafta 3-6 temel) | 0.960 | 0.865 | 0.710 |
+| El yapımı 145 öznitelik + kNN | 0.961 ± 0.003 | 0.893 ± 0.002 | 0.790 ± 0.004 |
+| Log-mel bant istatistiği + kNN, 8 kanal güç ort. | 0.979 ± 0.002 | 0.903 ± 0.006 | 0.780 ± 0.009 |
+| Makine ID sınıflandırıcısı (CNN) | 0.877 ± 0.027 | 0.845 ± 0.025 | 0.839 ± 0.010 |
+| ID-XAI + kNN topluluğu, 1. kanal | 0.989 ± 0.002 | 0.959 ± 0.001 | 0.900 ± 0.004 |
+| ID-XAI + kNN topluluğu, 1. kanal + 8 kanal ort. (önerilen) | 0.995 ± 0.001 | 0.968 ± 0.002 | 0.908 ± 0.002 |
+| Füzyon: ID sınıflandırıcısı + önerilen | 0.972 ± 0.009 | 0.959 ± 0.008 | 0.918 ± 0.008 |
+| Referans (yarı gözetimli): arıza etiketli XAI seçimi + KNN, Protokol F | 0.998 ± 0.001 | 0.980 ± 0.002 | 0.910 ± 0.006 |
+| Referans (yarı gözetimli): arıza etiketli XAI seçimi + AE, Protokol F | 0.996 ± 0.002 | 0.974 ± 0.006 | 0.921 ± 0.008 |
+
+### Tablo A (PAUC): dengeli protokol, 4 fan ID ortalaması, 3 tohum (ort. ± std)
+
+| Yöntem | +6 dB | 0 dB | −6 dB |
+|---|---|---|---|
+| Dense AE, log-mel (Hafta 3-6 temel) | 0.857 | 0.739 | 0.566 |
+| El yapımı 145 öznitelik + kNN | 0.872 ± 0.006 | 0.812 ± 0.005 | 0.645 ± 0.006 |
+| Log-mel bant istatistiği + kNN, 8 kanal güç ort. | 0.897 ± 0.008 | 0.746 ± 0.006 | 0.627 ± 0.008 |
+| Makine ID sınıflandırıcısı (CNN) | 0.822 ± 0.013 | 0.807 ± 0.026 | 0.773 ± 0.006 |
+| ID-XAI + kNN topluluğu, 1. kanal | 0.953 ± 0.006 | 0.900 ± 0.003 | 0.840 ± 0.002 |
+| ID-XAI + kNN topluluğu, 1. kanal + 8 kanal ort. (önerilen) | 0.977 ± 0.007 | 0.900 ± 0.007 | 0.835 ± 0.002 |
+| Füzyon: ID sınıflandırıcısı + önerilen | 0.912 ± 0.018 | 0.880 ± 0.014 | 0.827 ± 0.011 |
+| Referans (yarı gözetimli): arıza etiketli XAI seçimi + KNN, Protokol F | 0.992 ± 0.002 | 0.932 ± 0.003 | 0.842 ± 0.016 |
+| Referans (yarı gözetimli): arıza etiketli XAI seçimi + AE, Protokol F | 0.982 ± 0.006 | 0.921 ± 0.014 | 0.858 ± 0.017 |
+
+### Tablo B: önerilen yöntem, ID bazında AUC (3 tohum ort.)
+
+| ID | +6 dB | 0 dB | −6 dB |
+|---|---|---|---|
+| id_00 | 0.994 | 0.940 | 0.838 |
+| id_02 | 0.998 | 0.974 | 0.908 |
+| id_04 | 0.989 | 0.959 | 0.886 |
+| id_06 | 1.000 | 1.000 | 0.999 |
+| Ortalama | 0.995 | 0.968 | 0.908 |
+
+### Tablo C: literatürle kıyas (fan, 4 ID ortalaması, etiketsiz, AUC)
+
+| Yöntem | +6 dB | 0 dB | −6 dB |
+|---|---|---|---|
+| MIMII baseline AE [Purohit 2019] | 0.913 | 0.795 | 0.663 |
+| AE [MemNMF Tablo III] | 0.953 | 0.849 | 0.687 |
+| VAE | 0.948 | 0.849 | 0.715 |
+| GRLNet | 0.953 | 0.866 | 0.699 |
+| MemNMF-768 (2026) | 0.929 | 0.873 | 0.764 |
+| Li vd. 2024, LNS-AE | 0.95 | 0.862 | 0.716 |
+| Li vd. 2024, en iyi (TM-LGS) | 0.971 | 0.902 | 0.762 |
+| Bu çalışma: ID-XAI topluluğu (etiketsiz) | 0.995 | 0.968 | 0.908 |
+
+### Tablo D: +6 dB'de tezle kıyas (tez protokolü, AUC)
+
+| Yöntem | id_00 | id_02 | id_04 | id_06 | Ort. |
+|---|---|---|---|---|---|
+| Tez: XAI seçimli AE (etiketli seçim) | 0.9880 | 0.9998 | 0.9936 | 1.0000 | 0.9953 |
+| Bu çalışma, tez protokolü, etiketli seçim + AE (en iyi k) | 0.9971 | 0.9972 | 0.9992 | 1.0000 | 0.9984 |
+| Bu çalışma, tez protokolü, etiketli seçim + KNN (en iyi k) | 0.9966 | 0.9999 | 0.9976 | 1.0000 | 0.9985 |
+| Bu çalışma, tez protokolü, etiketli seçim + IF (en iyi k) | 0.9916 | 0.9999 | 0.9898 | 1.0000 | 0.9953 |
+| Bu çalışma, tez protokolü, ETİKETSİZ ID-XAI (1. kanal + 8 kanal ort.) | 0.9932 | 0.9983 | 0.9801 | 1.0000 | 0.9929 |
+| Bu çalışma, tez protokolü, ETİKETSİZ ID-XAI (8 kanal ort.) | 0.9936 | 0.9969 | 0.9984 | 1.0000 | 0.9972 |
+| Bu çalışma, tez protokolü, ETİKETSİZ ID-XAI (1. kanal) | 0.9883 | 0.9944 | 0.9752 | 0.9993 | 0.9893 |
+
+### Tablo E: ID-XAI ablasyonu (Protokol F, 4 ID ort., 3 tohum): öznitelik sayısı k ve detektör
+
+| Yöntem | +6 dB | 0 dB | −6 dB |
+|---|---|---|---|
+| ID-XAI, k=5, AE | 0.948 | 0.927 | 0.901 |
+| ID-XAI, k=5, IF | 0.953 | 0.950 | 0.906 |
+| ID-XAI, k=5, KNN | 0.962 | 0.958 | 0.896 |
+| ID-XAI, k=10, AE | 0.970 | 0.934 | 0.900 |
+| ID-XAI, k=10, IF | 0.953 | 0.949 | 0.871 |
+| ID-XAI, k=10, KNN | 0.970 | 0.958 | 0.892 |
+| ID-XAI, k=20, AE | 0.979 | 0.935 | 0.865 |
+| ID-XAI, k=20, IF | 0.961 | 0.941 | 0.846 |
+| ID-XAI, k=20, KNN | 0.980 | 0.949 | 0.885 |
+| ID-XAI, k=33, AE | 0.985 | 0.942 | 0.849 |
+| ID-XAI, k=33, IF | 0.970 | 0.920 | 0.803 |
+| ID-XAI, k=33, KNN | 0.987 | 0.938 | 0.872 |
+| ID-XAI, k=60, AE | 0.990 | 0.940 | 0.794 |
+| ID-XAI, k=60, IF | 0.962 | 0.896 | 0.766 |
+| ID-XAI, k=60, KNN | 0.982 | 0.927 | 0.853 |
+| tüm öznitelik, k=145, AE | 0.979 | 0.912 | 0.737 |
+| tüm öznitelik, k=145, IF | 0.918 | 0.809 | 0.677 |
+| tüm öznitelik, k=145, KNN | 0.961 | 0.894 | 0.787 |
+
+### Tablo F1: seviye öznitelikleri çıkarılmış (89 öznitelik), Protokol F
+
+| Yöntem | +6 dB | 0 dB | −6 dB |
+|---|---|---|---|
+| etiket_F, k=5, AE | 0.986 | 0.924 | 0.768 |
+| etiket_F, k=5, IF | 0.978 | 0.913 | 0.733 |
+| etiket_F, k=5, KNN | 0.990 | 0.944 | 0.789 |
+| etiket_F, k=10, AE | 0.984 | 0.929 | 0.777 |
+| etiket_F, k=10, IF | 0.978 | 0.891 | 0.708 |
+| etiket_F, k=10, KNN | 0.991 | 0.934 | 0.776 |
+| etiket_F, k=20, AE | 0.983 | 0.909 | 0.745 |
+| etiket_F, k=20, IF | 0.965 | 0.853 | 0.681 |
+| etiket_F, k=20, KNN | 0.985 | 0.913 | 0.742 |
+| id_xai, k=5, AE | 0.899 | 0.813 | 0.715 |
+| id_xai, k=5, IF | 0.916 | 0.821 | 0.691 |
+| id_xai, k=5, KNN | 0.944 | 0.872 | 0.743 |
+| id_xai, k=10, AE | 0.922 | 0.853 | 0.736 |
+| id_xai, k=10, IF | 0.917 | 0.809 | 0.679 |
+| id_xai, k=10, KNN | 0.942 | 0.874 | 0.742 |
+| id_xai, k=20, AE | 0.960 | 0.875 | 0.712 |
+| id_xai, k=20, IF | 0.917 | 0.816 | 0.665 |
+| id_xai, k=20, KNN | 0.952 | 0.882 | 0.720 |
+| tum, k=89, AE | 0.958 | 0.827 | 0.647 |
+| tum, k=89, IF | 0.877 | 0.718 | 0.593 |
+| tum, k=89, KNN | 0.939 | 0.815 | 0.645 |
+
+### Tablo F2: 8 kanal ortalaması öznitelikleri, Protokol F
+
+| Yöntem | +6 dB | 0 dB | −6 dB |
+|---|---|---|---|
+| etiket_F, k=5, AE | 0.983 | 0.917 | 0.818 |
+| etiket_F, k=5, IF | 0.996 | 0.946 | 0.831 |
+| etiket_F, k=5, KNN | 0.997 | 0.961 | 0.842 |
+| etiket_F, k=10, AE | 0.990 | 0.947 | 0.832 |
+| etiket_F, k=10, IF | 0.995 | 0.947 | 0.836 |
+| etiket_F, k=10, KNN | 0.998 | 0.965 | 0.875 |
+| etiket_F, k=20, AE | 0.987 | 0.959 | 0.851 |
+| etiket_F, k=20, IF | 0.998 | 0.942 | 0.822 |
+| etiket_F, k=20, KNN | 0.997 | 0.969 | 0.862 |
+| id_xai, k=5, AE | 0.970 | 0.914 | 0.750 |
+| id_xai, k=5, IF | 0.965 | 0.893 | 0.731 |
+| id_xai, k=5, KNN | 0.987 | 0.938 | 0.813 |
+| id_xai, k=10, AE | 0.991 | 0.938 | 0.847 |
+| id_xai, k=10, IF | 0.981 | 0.898 | 0.763 |
+| id_xai, k=10, KNN | 0.997 | 0.953 | 0.855 |
+| id_xai, k=20, AE | 0.991 | 0.926 | 0.831 |
+| id_xai, k=20, IF | 0.981 | 0.911 | 0.766 |
+| id_xai, k=20, KNN | 0.995 | 0.955 | 0.843 |
+| tum, k=145, AE | 0.983 | 0.893 | 0.727 |
+| tum, k=145, IF | 0.955 | 0.814 | 0.659 |
+| tum, k=145, KNN | 0.976 | 0.882 | 0.733 |
+
+### Tablo G: önerilen yönteme göre AUC farkı (önerilen − yöntem), Wilcoxon işaretli sıra testi, ID×tohum çiftleri
+
+| Yöntem | +6 dB | 0 dB | −6 dB |
+|---|---|---|---|
+| Dense AE, log-mel (Hafta 3-6 temel) | - | - | - |
+| El yapımı 145 öznitelik + kNN | +0.034 (p=0.000488, n=12) | +0.075 (p=0.000488, n=12) | +0.118 (p=0.000488, n=12) |
+| Log-mel bant istatistiği + kNN, 8 kanal güç ort. | +0.017 (p=0.000488, n=12) | +0.065 (p=0.000488, n=12) | +0.128 (p=0.000488, n=12) |
+| Makine ID sınıflandırıcısı (CNN) | +0.118 (p=0.000977, n=12) | +0.123 (p=0.0342, n=12) | +0.069 (p=0.151, n=12) |
+| ID-XAI + kNN topluluğu, 1. kanal | +0.006 (p=0.000488, n=12) | +0.009 (p=0.00781, n=12) | +0.008 (p=0.00684, n=12) |
+| Füzyon: ID sınıflandırıcısı + önerilen | +0.024 (p=0.0522, n=12) | +0.009 (p=1, n=12) | -0.011 (p=0.519, n=12) |
